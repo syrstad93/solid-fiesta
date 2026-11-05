@@ -57,8 +57,11 @@ public class Server implements Messenger<String, ClientHandler> {
    * @return the {@link Server} in {@link #instance}.
    * @throws IOException if instantiating a new {@link Server} and an I/O error occurs when
    *        opening the socket when setting the {@link ServerSocket}.
+   * @throws IllegalArgumentException if instantiating a new {@link Server} and the port number
+   *        given to the {@link ServerSocket} is outside the specified range of valid port values,
+   *        which is between {@code 0} and {@code 65535}, inclusive.
    */
-  public static Server getInstance() throws IOException {
+  public static Server getInstance() throws IOException, IllegalArgumentException {
     if (instance == null) {
       synchronized (Server.class) {
         if (instance == null) {
