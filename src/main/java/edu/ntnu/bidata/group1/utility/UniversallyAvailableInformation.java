@@ -18,4 +18,5 @@ package edu.ntnu.bidata.group1.utility;
 public abstract class UniversallyAvailableInformation {
 
   public static int PORT_NUMBER = 1238;
+  public static String LOCALHOST = "127.0.0.1";
 }

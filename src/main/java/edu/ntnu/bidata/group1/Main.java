@@ -1,6 +1,6 @@
 package edu.ntnu.bidata.group1;
 
-import edu.ntnu.bidata.group1.server.Server;
+import edu.ntnu.bidata.group1.network.server.Server;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
 
