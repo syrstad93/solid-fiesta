@@ -4,7 +4,7 @@ import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Set;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,11 +15,11 @@ import java.util.concurrent.Executors;
  * <li>
  *   Has a {@link ServerSocket} that accepts connection requests from external sockets.
  *   On acceptance, a {@link Socket} is created and passed to a new {@link ClientHandler}
- *   that maintains the connection.
+ *   that maintains the connection. The client handler is provided with a unique ID.
  * </li>
  * <li>
- *   Has a {@link Set} containing all {@link ClientHandler} objects.
- *   The set is a {@link ConcurrentHashMap} to ensure thread safety.
+ *   Has a {@link Map} containing all {@link ClientHandler} objects.
+ *   The map is a {@link ConcurrentHashMap} to ensure thread safety.
  * </li>
  * <li>
  *   Has an {@link ExecutorService} that manages the execution of tasks using threads.
@@ -31,8 +31,10 @@ public class Server implements Messenger<String, ClientHandler> {
   private static volatile Server instance;
 
   private ServerSocket server;
-  private Set<ClientHandler> handlers;
+  private Map<Long, ClientHandler> handlers;
   private ExecutorService executor;
+
+  private long lastUsedId;
 
   /**
    * Instantiates {@link Server} with a ServerSocket that uses the port number given by
@@ -46,8 +48,9 @@ public class Server implements Messenger<String, ClientHandler> {
    */
   private Server() throws IOException, IllegalArgumentException {
     this.server = new ServerSocket(UniversallyAvailableInformation.PORT_NUMBER);
-    this.handlers = ConcurrentHashMap.newKeySet();
+    this.handlers = new ConcurrentHashMap<>();
     this.executor = Executors.newVirtualThreadPerTaskExecutor();
+    this.lastUsedId = 1L;
   }
 
   /**
@@ -91,17 +94,30 @@ public class Server implements Messenger<String, ClientHandler> {
     while (this.server != null && !this.server.isClosed()) {
       try {
         Socket socket = this.server.accept();
-        ClientHandler handler = new ClientHandler(socket, this);
+        long id = getNextAvailableId();
 
-        this.handlers.add(handler);
+        ClientHandler handler = new ClientHandler(socket, id, this);
+
+        this.handlers.put(id, handler);
         this.executor.submit(handler);
 
       } catch (IOException e) {
-        if (this.server.isClosed()) {
-          // Do nothing. The loop will end.
+        // If this.server is closed, this exception is expected. Do nothing.
+        if (!this.server.isClosed()) {
+          throw e;
         }
       }
     }
+  }
+
+  /**
+   * Increments {@link #lastUsedId} by {@code 1} and returns it.
+   *
+   * @return the value of {@link #lastUsedId} after incrementing by {@code 1}.
+   */
+  private long getNextAvailableId() {
+    this.lastUsedId++;
+    return this.lastUsedId;
   }
 
   /**

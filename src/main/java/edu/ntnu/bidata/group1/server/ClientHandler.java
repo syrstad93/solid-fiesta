@@ -18,6 +18,10 @@ public class ClientHandler implements Runnable  {
 
   private Messenger<String, ClientHandler> messenger;
 
+  private long id;
+  private String header;
+  // TODO: Implement data interchange with client for requesting header information.
+
   /**
    * Instantiates this class by setting a {@link Socket}
    * that is in communication with a remote client,
@@ -25,11 +29,14 @@ public class ClientHandler implements Runnable  {
    * and a {@link PrintWriter} that sends output to the {@link Socket}.
    *
    * @param socket is the {@link Socket} in communication with a remote client.
+   * @param id is a unique ID for this {@link ClientHandler}.
+   * @param messenger is an interface where incoming messages are passed on through.
    */
-  public ClientHandler(Socket socket, Messenger<String, ClientHandler> messenger)
+  public ClientHandler(Socket socket, long id, Messenger<String, ClientHandler> messenger)
       throws IOException {
-    this.messenger = messenger;
     setSocket(socket);
+    setMessenger(messenger);
+    setId(id);
     setBufferedReader();
     setPrintWriter();
   }
@@ -102,6 +109,38 @@ public class ClientHandler implements Runnable  {
    */
   private void setPrintWriter() throws IOException {
     this.out = new PrintWriter(this.socket.getOutputStream(), true);
+  }
+
+  /**
+   * Sets a {@link Messenger} interface to the class field {@link #messenger}.
+   *
+   * @param messenger is the interface to set.
+   * @throws IllegalArgumentException if {@code messenger} is {@code null}.
+   */
+  private void setMessenger(Messenger<String, ClientHandler> messenger)  {
+    if (messenger == null)  {
+      throw new IllegalArgumentException("Messenger interface cannot be set to null.");
+    }
+
+    this.messenger = messenger;
+  }
+
+  /**
+   * Sets the class field {@link #id}.
+   *
+   * @param id is the id to set.
+   */
+  private void setId(long id) {
+    this.id = id;
+  }
+
+  /**
+   * Returns the {@link #id}.
+   *
+   * @return {@link #id}.
+   */
+  public long getId() {
+    return this.id;
   }
 
   /**
