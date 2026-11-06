@@ -26,19 +26,17 @@ public class ClientHandler implements Runnable  {
    *
    * @param socket is the {@link Socket} in communication with a remote client.
    */
-  public ClientHandler(Socket socket, Messenger<String, ClientHandler> messenger)  {
+  public ClientHandler(Socket socket, Messenger<String, ClientHandler> messenger)
+      throws IOException {
     this.messenger = messenger;
     setSocket(socket);
-    try {
-      setBufferedReader();
-      setPrintWriter();
-    } catch (Exception e) {
-      // TODO: Exception handling.
-    }
+    setBufferedReader();
+    setPrintWriter();
   }
 
   /**
-   * Maintains a loop that waits to receive commands from the client.
+   * Maintains a loop that waits to receive commands from the client. When a message is received,
+   * it is passed on through the {@link Messenger} interface.
    */
   @Override
   public void run() {
