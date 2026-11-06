@@ -1,19 +1,24 @@
 package edu.ntnu.bidata.group1;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-public class Main {
-  static void main() {
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    IO.println(String.format("Hello and welcome!"));
+import edu.ntnu.bidata.group1.server.Server;
+import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
+import java.io.IOException;
 
-    for (int i = 1; i <= 5; i++) {
-      //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one
-      // <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-      // for you, but you can always add more by pressing <shortcut
-      // actionId="ToggleLineBreakpoint"/>.
-      IO.println("i = " + i);
+public class Main {
+
+  public static void main(String[] args)  {
+    try {
+      Server server = Server.getInstance();
+      server.start();
+    } catch (IllegalArgumentException e)  {
+      System.out.println("Error occurred. Please contact support.\n"
+          + "Error description:\n"
+          + "Server port number rejected. Rejected port number: "
+          + UniversallyAvailableInformation.PORT_NUMBER);
+      e.printStackTrace();
+    } catch (IOException e) {
+      System.out.println("Significant error occurred. Please contact support.");
+      e.printStackTrace();
     }
   }
 }
