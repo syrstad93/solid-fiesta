@@ -12,19 +12,19 @@ import java.util.concurrent.Executors;
 /**
  * Handles server functionalities.
  *
- * <p>
+ * <li>
  *   Has a {@link ServerSocket} that accepts connection requests from external sockets.
  *   On acceptance, a {@link Socket} is created and passed to a new {@link ClientHandler}
  *   that maintains the connection.
- * </p>
- * <p>
+ * </li>
+ * <li>
  *   Has a {@link Set} containing all {@link ClientHandler} objects.
  *   The set is a {@link ConcurrentHashMap} to ensure thread safety.
- * </p>
- * <p>
+ * </li>
+ * <li>
  *   Has an {@link ExecutorService} that manages the execution of tasks using threads.
  *   The number of threads is unbounded.
- * </p>
+ * </li>
  */
 public class Server implements Messenger<String, ClientHandler> {
 
@@ -55,9 +55,9 @@ public class Server implements Messenger<String, ClientHandler> {
    * or creates a new instance if one doesn't exist.
    *
    * @return the {@link Server} in {@link #instance}.
-   * @throws IOException if instantiating a new {@link Server} and an I/O error occurs when
+   * @throws IOException if instantiating a new {@link Server}, and an I/O error occurs when
    *        opening the socket when setting the {@link ServerSocket}.
-   * @throws IllegalArgumentException if instantiating a new {@link Server} and the port number
+   * @throws IllegalArgumentException if instantiating a new {@link Server}, and the port number
    *        given to the {@link ServerSocket} is outside the specified range of valid port values,
    *        which is between {@code 0} and {@code 65535}, inclusive.
    */
@@ -75,15 +75,17 @@ public class Server implements Messenger<String, ClientHandler> {
   /**
    * Starts the server and keeps it running.
    *
-   * <p>
-   *   The server runs as long as {@link #server} is not {@code null} and remains open.
+   *  <p>
+   *   Accepts new socket connections, and adds them to the {@link ExecutorService}.
    * </p>
    * <p>
-   *   Accepts new socket connections, and adds them to the {@link ExecutorService}.
+   *   The server is kept running by a loop that continues as long as
+   *   the class field {@link #server} is not {@code null} and
+   *   the {@link ServerSocket} that it refers to remains open.
    * </p>
    *
    * @throws IOException if an {@link IOException} is thrown by the {@link ServerSocket}
-   *        that is not caused by it closing down.
+   *        that is not caused by it purposely being closed down.
    */
   public void start() throws IOException  {
     while (this.server != null && !this.server.isClosed()) {
@@ -102,11 +104,24 @@ public class Server implements Messenger<String, ClientHandler> {
     }
   }
 
+  /**
+   * Performs whatever action the received message indicates.
+   * TODO: Update Javadoc when method is implemented.
+   *
+   * @param message is the message received.
+   * @param sender is the sender object.
+   */
   @Override
   public void onMessage(String message, ClientHandler sender) {
     // TODO: Implement what to do when receiving messages.
   }
 
+  /**
+   * Performs whatever actions are necessary to safely disconnect a client.
+   * TODO: Update Javadoc when method is implemented.
+   *
+   * @param client is the client that disconnects.
+   */
   @Override
   public void onDisconnect(ClientHandler client) {
     // TODO: Implement what to do when receiving notice that a socket is disconnecting.
