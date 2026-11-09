@@ -1,5 +1,6 @@
 package edu.ntnu.bidata.group1.network;
 
+import edu.ntnu.bidata.group1.network.server.Messenger;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,8 +18,13 @@ import java.net.Socket;
  * <p>Messages sent by the server are received on a background daemon thread and printed to
  * the standard output. Text is sent to the server with {@link #message(String)}. Once the
  * client is no longer needed, {@link #close()} should be called to release the socket.
+ *
+ * @param <ClientType> is the type of the object for whom this class will hold a connection.
+ *                    The class that uses a {@link ClientConnectionHolder} must implement
+ *                    the {@link Messenger} interface.
  */
-public class Client {
+public class ClientConnectionHolder<ClientType extends Messenger<String, ClientConnectionHolder>> {
+
   private Socket socket;
   private DataOutputStream out;
   private DataInputStream in;
@@ -27,6 +33,8 @@ public class Client {
   private final String address;
   private final int port;
 
+  private ClientType client;
+
   /**
    * Creates a new client and connects it to the server.
    *
@@ -34,11 +42,13 @@ public class Client {
    * defined in {@link UniversallyAvailableInformation}. The connection is then established through
    * {@link #connect()}.
    *
+   * @param client is the client for whom this class holds a connection.
    * @throws IOException if an I/O error occurs while connecting to the server.
    * @throws InterruptedException if the thread is interrupted while waiting between connection
    *     attempts.
    */
-  public Client() throws IOException, InterruptedException {
+  public ClientConnectionHolder(ClientType client) throws IOException, InterruptedException {
+    setClient(client);
     this.address = UniversallyAvailableInformation.LOCALHOST;
     this.port = UniversallyAvailableInformation.PORT_NUMBER;
     connect();
@@ -111,8 +121,7 @@ public class Client {
     Thread listener = new Thread(() -> {
       try {
         while (connected) {
-          System.out.println("[Server] " + in.readUTF());
-          // TODO: do something useful with received messages.
+          this.client.onMessage(in.readUTF(), this);
         }
       } catch (IOException e) {
         if (connected) {
@@ -160,4 +169,16 @@ public class Client {
     }
   }
 
+  /**
+   * Sets the client to whom this class holds a connection for.
+   *
+   * @param client is the client.
+   * @throws IllegalArgumentException if {@code client} is {@code null}.
+   */
+  private void setClient(ClientType client) {
+    if (client == null) {
+      throw new IllegalArgumentException("ClientConnectionHolder cannot be null");
+    }
+    this.client = client;
+  }
 }
