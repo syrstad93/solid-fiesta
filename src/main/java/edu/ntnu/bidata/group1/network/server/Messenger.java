@@ -1,4 +1,4 @@
-package edu.ntnu.bidata.group1.server;
+package edu.ntnu.bidata.group1.network.server;
 
 /**
  * Allows implementers to receive messages from clients that calls the interface.
