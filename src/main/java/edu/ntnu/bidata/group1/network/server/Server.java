@@ -129,7 +129,8 @@ public class Server implements Messenger<String, ClientHandler> {
    */
   @Override
   public void onMessage(String message, ClientHandler sender) {
-    // TODO: Implement what to do when receiving messages.
+    RouteMessage routeMessage = new RouteMessage(message, this.handlers);
+    routeMessage.route(message);
   }
 
   /**
