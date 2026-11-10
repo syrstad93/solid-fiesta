@@ -8,19 +8,29 @@ import java.util.Map;
  */
 public class RouteMessage {
 
-  private Map<Long, ClientHandler> handlers;
+  private ClientHandlerList handlers;
   private MessageWorker messageWorker;
 
   /**
-   * Instantiates this class by instantiating a {@link MessageWorker} for the given {@code message},
+   * Instantiates this class by creating a {@link MessageWorker} for the given {@code message},
    * and setting a {@link Map} containing all {@link ClientHandler} objects.
    *
    * @param message is a command message.
-   * @param handlers is a {@link Map} containing all {@link ClientHandler} objects.
    */
-  public RouteMessage(String message, Map<Long, ClientHandler> handlers) {
+  public RouteMessage(String message) {
     setMessageWorker(message);
-    setHandlers(handlers);
+    this.handlers = ClientHandlerList.getInstance();
+  }
+
+  /**
+   * Instantiates this class with a {@link MessageWorker}
+   * and a {@link Map} containing all {@link ClientHandler} objects.
+   *
+   * @param messageWorker is a {@link MessageWorker} for a command message.
+   */
+  public RouteMessage(MessageWorker messageWorker) {
+    this.messageWorker = messageWorker;
+    this.handlers = ClientHandlerList.getInstance();
   }
 
   /**
@@ -38,20 +48,6 @@ public class RouteMessage {
   }
 
   /**
-   * Sets an unmodifiable {@link Map}
-   * containing all {@link ClientHandler} objects to {@link #handlers}.
-   *
-   * @param handlers is a {@link Map} containing all {@link ClientHandler} objects.
-   * @throws IllegalArgumentException if {@code handlers} is {@code null}.
-   */
-  private void setHandlers(Map<Long, ClientHandler> handlers) throws IllegalArgumentException {
-    if (handlers == null) {
-      throw new IllegalArgumentException("Handlers cannot be null.");
-    }
-    this.handlers = Map.copyOf(handlers);
-  }
-
-  /**
    * Routes a message to its destination based on the destination prefix and ID.
    *
    * @param message is a command message.
@@ -64,7 +60,6 @@ public class RouteMessage {
 
     switch (this.messageWorker.getDestinationPrefix())  {
       case "CH" -> sendToClientHandler();
-      case "SE" -> sendToServer();
       case "RO" -> sendToRoom();
       case "AL" -> broadcastToAll();
       default -> throw new IllegalArgumentException(
