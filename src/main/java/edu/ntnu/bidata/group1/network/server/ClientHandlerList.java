@@ -10,13 +10,31 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ClientHandlerList {
 
+  private static volatile ClientHandlerList instance;
+
   private Map<Long, ClientHandler> handlers;
 
   /**
    * Instantiates the class with an empty map.
    */
-  public ClientHandlerList()  {
+  private ClientHandlerList()  {
     this.handlers = new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Returns the instance of this class, or creating a new one if it does not exist.
+   *
+   * @return the instance of this class.
+   */
+  public static ClientHandlerList getInstance() {
+    if (instance == null) {
+      synchronized (ClientHandlerList.class) {
+        if (instance == null) {
+          instance = new ClientHandlerList();
+        }
+      }
+    }
+    return instance;
   }
 
   /**
@@ -82,5 +100,16 @@ public class ClientHandlerList {
           "ClientHandler with ID " + id + " does not exist.");
     }
     return this.handlers.get(id);
+  }
+
+  /**
+   * Checks if the map contains a {@link ClientHandler} with the given ID.
+   *
+   * @param id is the ID to check for.
+   * @return {@code true} if the map contains a {@link ClientHandler} with the given ID,
+   *        {@code false} otherwise.
+   */
+  public boolean containsKey(long id) {
+    return this.handlers.containsKey(id);
   }
 }
