@@ -1,5 +1,6 @@
 package edu.ntnu.bidata.group1.network.server;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -111,5 +112,14 @@ public class ClientHandlerList {
    */
   public boolean containsKey(long id) {
     return this.handlers.containsKey(id);
+  }
+
+  /**
+   * Returns a {@link Collection} of all {@link ClientHandler} objects in the map.
+   *
+   * @return a {@link Collection} of all {@link ClientHandler} objects in the map.
+   */
+  public Collection<ClientHandler> getAll() {
+    return this.handlers.values();
   }
 }

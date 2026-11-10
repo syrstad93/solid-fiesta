@@ -83,7 +83,7 @@ public class ServerLogic {
       case "CH" -> sendToClientHandler(messageWorker, sender);
       case "SE" -> onCommand(messageWorker, sender);
       case "RO" -> sendToRoom(messageWorker, sender);
-      case "AL" -> broadcastToAll();
+      case "AL" -> broadcastToAll(messageWorker);
       default -> throw new IllegalArgumentException(
           "Message must contain a valid destination prefix: 'CH', 'SE', 'RO', or 'AL'."
       );
@@ -116,4 +116,62 @@ public class ServerLogic {
     client.sendToClient(messageWorker.getMessage());
   }
 
+  /**
+   * Executes the action associated with the command message of the {@link MessageWorker}.
+   *
+   * @param messageWorker is a {@link MessageWorker} for the command message.
+   * @param sender is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
+   */
+  public void onCommand(MessageWorker messageWorker, ClientHandler sender) {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    String command = messageWorker.getCommand();
+
+    //TODO: Implement command handling logic.
+  }
+
+  /**
+   * Sends the given {@link MessageWorker} to the {@link Room} with the ID found in
+   * the destination part of the message of the {@link MessageWorker}.
+   *
+   * @param messageWorker is a {@link MessageWorker} for the command message.
+   * @param sender is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
+   */
+  private void sendToRoom(MessageWorker messageWorker, ClientHandler sender) {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    long roomId = messageWorker.getDestinationId();
+
+    // TODO: Implement logic to send message to the specified room.
+  }
+
+  /**
+   * Broadcasts a message to all connected clients.
+   *
+   * @param messageWorker is a {@link MessageWorker} for the command message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   */
+  private void broadcastToAll(MessageWorker messageWorker) {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+
+    for (ClientHandler client : this.handlers.getAll()) {
+      client.sendToClient(messageWorker.getMessage());
+    }
+  }
 }
