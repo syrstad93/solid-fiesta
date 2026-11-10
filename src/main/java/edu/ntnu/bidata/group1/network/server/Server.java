@@ -1,5 +1,6 @@
 package edu.ntnu.bidata.group1.network.server;
 
+import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -31,8 +32,10 @@ public class Server implements Messenger<String, ClientHandler> {
   private static volatile Server instance;
 
   private ServerSocket server;
-  private Map<Long, ClientHandler> handlers;
+  private ClientHandlerList handlers;
   private ExecutorService executor;
+
+  private ServerLogic logic;
 
   private long lastUsedId;
 
@@ -48,8 +51,10 @@ public class Server implements Messenger<String, ClientHandler> {
    */
   private Server() throws IOException, IllegalArgumentException {
     this.server = new ServerSocket(UniversallyAvailableInformation.PORT_NUMBER);
-    this.handlers = new ConcurrentHashMap<>();
     this.executor = Executors.newVirtualThreadPerTaskExecutor();
+
+    this.handlers = ClientHandlerList.getInstance();
+    this.logic = new ServerLogic(this);
     this.lastUsedId = 1L;
   }
 
@@ -94,11 +99,10 @@ public class Server implements Messenger<String, ClientHandler> {
     while (this.server != null && !this.server.isClosed()) {
       try {
         Socket socket = this.server.accept();
-        long id = getNextAvailableId();
 
-        ClientHandler handler = new ClientHandler(socket, id, this);
+        ClientHandler handler = new ClientHandler(socket, getNextAvailableId(), this);
 
-        this.handlers.put(id, handler);
+        this.handlers.add(handler);
         this.executor.submit(handler);
 
       } catch (IOException e) {
@@ -121,16 +125,32 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Performs whatever action the received message indicates.
-   * TODO: Update Javadoc when method is implemented.
+   * Receives a message and checks if it's for the server or for another client.
+   * If it's for the server, it is passed on to the {@link ServerLogic} class.
+   * If it's for another client, it is passed on to the {@link RouteMessage} class.
    *
    * @param message is the message received.
    * @param sender is the sender object.
+   * @throws IllegalArgumentException if {@code message} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
    */
   @Override
   public void onMessage(String message, ClientHandler sender) {
-    RouteMessage routeMessage = new RouteMessage(message, this.handlers);
-    routeMessage.route(message);
+    if (message == null) {
+      throw new IllegalArgumentException("Message cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    MessageWorker messageWorker = new MessageWorker(message);
+
+    if (messageWorker.getDestinationPrefix().equals("SE"))  {
+      this.logic.onCommand(messageWorker, sender);
+    } else {
+      RouteMessage routeMessage = new RouteMessage(messageWorker);
+      routeMessage.route(message);
+    }
   }
 
   /**
