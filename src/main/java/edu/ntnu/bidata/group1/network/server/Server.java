@@ -125,9 +125,7 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Receives a message and checks if it's for the server or for another client.
-   * If it's for the server, it is passed on to the {@link ServerLogic} class.
-   * If it's for another client, it is passed on to the {@link RouteMessage} class.
+   * Receives a message and a sender object, and passes them on to the {@link ServerLogic} class.
    *
    * @param message is the message received.
    * @param sender is the sender object.
@@ -143,14 +141,7 @@ public class Server implements Messenger<String, ClientHandler> {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    MessageWorker messageWorker = new MessageWorker(message);
-
-    if (messageWorker.getDestinationPrefix().equals("SE"))  {
-      this.logic.onCommand(messageWorker, sender);
-    } else {
-      RouteMessage routeMessage = new RouteMessage(messageWorker);
-      routeMessage.route(message);
-    }
+    this.logic.receiveMessage(message, sender);
   }
 
   /**

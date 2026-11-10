@@ -8,6 +8,7 @@ import edu.ntnu.bidata.group1.utility.MessageWorker;
 public class ServerLogic {
 
   private Server server;
+  private ClientHandlerList handlers;
 
   /**
    * Instantiates this class by setting a {@link Server} to {@link #server}.
@@ -16,6 +17,7 @@ public class ServerLogic {
    */
   public ServerLogic(Server server) {
     setServer(server);
+    this.handlers = ClientHandlerList.getInstance();
   }
 
   /**
@@ -43,12 +45,32 @@ public class ServerLogic {
   /**
    * Receives a command message and executes the associated action.
    *
+   * @param message is a command message.
+   * @param sender is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code message} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
+   */
+  public void receiveMessage(String message, ClientHandler sender)
+      throws IllegalArgumentException {
+    if (message == null) {
+      throw new IllegalArgumentException("Message cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    receiveMessage(new MessageWorker(message), sender);
+  }
+
+  /**
+   * Receives a {@link MessageWorker} for a command message and executes the associated action.
+   *
    * @param messageWorker is a {@link MessageWorker} for the command message.
    * @param sender is the {@link ClientHandler} that sent the message.
    * @throws IllegalArgumentException if {@code message} is {@code null}.
    * @throws IllegalArgumentException if {@code sender} is {@code null}.
    */
-  public void onCommand(MessageWorker messageWorker, ClientHandler sender)
+  public void receiveMessage(MessageWorker messageWorker, ClientHandler sender)
       throws IllegalArgumentException {
     if (messageWorker == null) {
       throw new IllegalArgumentException("MessageWorker cannot be null.");
@@ -57,6 +79,41 @@ public class ServerLogic {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    // TODO: Logic for handling the command message goes here.
+    switch (messageWorker.getDestinationPrefix())  {
+      case "CH" -> sendToClientHandler(messageWorker, sender);
+      case "SE" -> onCommand(messageWorker, sender);
+      case "RO" -> sendToRoom(messageWorker, sender);
+      case "AL" -> broadcastToAll();
+      default -> throw new IllegalArgumentException(
+          "Message must contain a valid destination prefix: 'CH', 'SE', 'RO', or 'AL'."
+      );
+    }
   }
+
+  /**
+   * Sends the message of the {@link MessageWorker} to the {@link ClientHandler} with the ID found
+   * in the destination part of the message.
+   *
+   * @param messageWorker is a {@link MessageWorker} for the command message.
+   * @param sender is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
+   */
+  private void sendToClientHandler(MessageWorker messageWorker, ClientHandler sender) {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    if (!this.handlers.containsKey(messageWorker.getDestinationId())) {
+      throw new IllegalArgumentException(
+          "No ClientHandler with the given ID exists in the handlers map."
+      );
+    }
+    ClientHandler client = this.handlers.get(messageWorker.getDestinationId());
+    client.sendToClient(messageWorker.getMessage());
+  }
+
 }
