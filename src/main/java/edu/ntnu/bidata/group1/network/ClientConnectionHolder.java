@@ -117,7 +117,7 @@ public class ClientConnectionHolder<ClientType extends Messenger<String, ClientC
    * message describing the lost connection is printed. The thread is marked as a daemon so that
    * it does not prevent the application from exiting.
    */
-  private void receive() {
+  public void receive() {
     Thread listener = new Thread(() -> {
       try {
         while (connected) {
@@ -145,7 +145,7 @@ public class ClientConnectionHolder<ClientType extends Messenger<String, ClientC
    * @throws InterruptedException if the thread is interrupted while waiting between retry
    *     attempts.
    */
-  private void retryConnection() throws IOException, InterruptedException {
+  public void retryConnection() throws IOException, InterruptedException {
     if (retries++ < 3) {
       System.out.println("Retrying connection...");
       Thread.sleep(2000);
