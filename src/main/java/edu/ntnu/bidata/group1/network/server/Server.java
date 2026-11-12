@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -95,7 +96,9 @@ public class Server implements Messenger<String, ClientHandler> {
    * @throws IOException if an {@link IOException} is thrown by the {@link ServerSocket}
    *        that is not caused by it purposely being closed down.
    */
-  public void start() throws IOException  {
+  public void start(CountDownLatch serverReady) throws IOException  {
+    serverReady.countDown();
+
     while (this.server != null && !this.server.isClosed()) {
       try {
         Socket socket = this.server.accept();
@@ -122,6 +125,29 @@ public class Server implements Messenger<String, ClientHandler> {
   private long getNextAvailableId() {
     this.lastUsedId++;
     return this.lastUsedId;
+  }
+
+  /**
+   * Closes the {@link ServerSocket} and shuts down the {@link ExecutorService}.
+   *
+   * @throws IOException if an I/O error occurs when closing the socket.
+   */
+  public void closeServer() throws IOException {
+    if (this.server != null && !this.server.isClosed()) {
+      this.server.close();
+    }
+    if (this.executor != null && !this.executor.isShutdown()) {
+      this.executor.shutdown();
+    }
+  }
+
+  /**
+   * Returns the logic class that handles the server's logic.
+   *
+   * @return the {@link ServerLogic} class.
+   */
+  public ServerLogic logic() {
+    return this.logic;
   }
 
   /**

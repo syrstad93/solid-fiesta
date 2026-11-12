@@ -8,7 +8,7 @@ public class Switch extends Device {
 
     // Oppretter en bryter som kobles til serveren
     public Switch() throws IOException, InterruptedException {
-        super();
+        super(Type.SENSOR);
     }
 
     @Override // Kalles når bryteren mottar en melding fra serveren

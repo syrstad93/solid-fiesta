@@ -8,7 +8,7 @@ public class Light extends Device {
 
     // Oppretter en Light-enhet som kobles til serveren
     public Light() throws Exception {
-        super();
+        super(Type.ACTUATOR);
     }
     // Returnerer lysets verdi
     public String readValue() {
