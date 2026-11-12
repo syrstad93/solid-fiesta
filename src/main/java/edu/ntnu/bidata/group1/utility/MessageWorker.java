@@ -81,7 +81,9 @@ public class MessageWorker {
   }
 
   /**
-   * Sets the full message to {@link #message}.
+   * Sets the full message to {@link #message},
+   * and then interprets the message into its specific parts,
+   * which are set to {@link #destination}, {@link #source}, and {@link #command}.
    *
    * @param message is a command message.
    * @throws IllegalArgumentException if {@code message} is {@code null}.
