@@ -4,18 +4,32 @@ import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 
 public class Light extends Device {
 
-    protected String currentValue;
+    /**
+     * Stores the most recently received light value.
+     */
 
-    // Oppretter en Light-enhet som kobles til serveren
+    protected String currentValue;
     public Light() throws Exception {
         super();
     }
-    // Returnerer lysets verdi
+
+/**
+ * Returns the current light value.
+ *
+ * @return the current light value.
+ */
+    
     public String readValue() {
         return currentValue;
     }
 
-    // Kalles når en melding mottas fra serveren
+/**
+ * Called automatically when the light device receives a message from the server.
+ *
+ * @param message the received message.
+ * @param sender the connection that sent the message.
+ */
+
     @Override
     public void onMessage(String message, ClientConnectionHolder sender) {
         System.out.println("Light: " + message);
