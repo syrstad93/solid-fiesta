@@ -6,8 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A register of all {@link ClientHandler} objects.
- * Contains a {@link Map} with the ID of the {@link ClientHandler} as key
- * and the {@link ClientHandler} object as value.
+ * This is a singleton class, and can be accessed by calling {@link #getInstance()}.
+ * Contains a {@link Map} with a {@link ClientHandler} object as value and its ID as key.
  */
 public class ClientHandlerList {
 
