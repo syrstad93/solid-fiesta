@@ -9,15 +9,20 @@ public class ServerLogic {
 
   private Server server;
   private ClientHandlerList handlers;
+  private RoomList rooms;
 
   /**
-   * Instantiates this class by setting a {@link Server} to {@link #server}.
+   * Instantiates this class.
+   * The argument {@code server} is the {@link Server} that this class contains logic for.
+   * This class also contains a {@link ClientHandlerList} and a {@link RoomList} for
+   * organizing the {@link ClientHandler} and {@link Room} objects associated with the server.
    *
    * @param server is the {@link Server} that this class contains logic for.
    */
   public ServerLogic(Server server) {
     setServer(server);
     this.handlers = ClientHandlerList.getInstance();
+    this.rooms = RoomList.getInstance();
   }
 
   /**
@@ -80,7 +85,7 @@ public class ServerLogic {
     }
 
     switch (messageWorker.getDestinationPrefix())  {
-      case "CH" -> sendToClientHandler(messageWorker, sender);
+      case "CH" -> sendToClientHandler(messageWorker);
       case "SE" -> onCommand(messageWorker, sender);
       case "RO" -> sendToRoom(messageWorker, sender);
       case "AL" -> broadcastToAll(messageWorker);
@@ -95,16 +100,11 @@ public class ServerLogic {
    * in the destination part of the message.
    *
    * @param messageWorker is a {@link MessageWorker} for the command message.
-   * @param sender is the {@link ClientHandler} that sent the message.
    * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
-   * @throws IllegalArgumentException if {@code sender} is {@code null}.
    */
-  private void sendToClientHandler(MessageWorker messageWorker, ClientHandler sender) {
+  private void sendToClientHandler(MessageWorker messageWorker) {
     if (messageWorker == null) {
       throw new IllegalArgumentException("MessageWorker cannot be null.");
-    }
-    if (sender == null) {
-      throw new IllegalArgumentException("Sender cannot be null.");
     }
 
     if (!this.handlers.containsKey(messageWorker.getDestinationId())) {
@@ -156,7 +156,13 @@ public class ServerLogic {
 
     long roomId = messageWorker.getDestinationId();
 
-    // TODO: Implement logic to send message to the specified room.
+    if (!this.rooms.containsKey(roomId)) {
+      throw new IllegalArgumentException(
+          "No Room with the given ID exists in the rooms map."
+      );
+    }
+    Room room = this.rooms.get(roomId);
+    room.onCommand(messageWorker, sender);
   }
 
   /**

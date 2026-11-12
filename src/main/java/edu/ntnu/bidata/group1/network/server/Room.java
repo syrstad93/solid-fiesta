@@ -1,5 +1,6 @@
 package edu.ntnu.bidata.group1.network.server;
 
+import edu.ntnu.bidata.group1.utility.MessageWorker;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,6 +126,26 @@ public class Room {
    */
   public Collection<Long> getKeys() {
     return this.handlers.keySet();
+  }
+
+  /**
+   * Receives a {@link MessageWorker} and executes the action specified in the message.
+   *
+   * @param messageWorker is a {@link MessageWorker} containing the message to execute.
+   * @param sender is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if {@code sender} is {@code null}.
+   */
+  public void onCommand(MessageWorker messageWorker, ClientHandler sender)
+      throws IllegalArgumentException {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+    if (sender == null) {
+      throw new IllegalArgumentException("Sender cannot be null.");
+    }
+
+    // TODO: Implement message handling logic for the room. Consider a logic class for Room.
   }
 
 }

@@ -121,4 +121,15 @@ public class RoomList {
     return this.rooms.keySet();
   }
 
+  /**
+   * Checks if the map contains a {@link Room} with the given ID.
+   *
+   * @param id is the ID to check for.
+   * @return {@code true} if the map contains a {@link Room} with the given ID,
+   *        {@code false} otherwise.
+   */
+  public boolean containsKey(long id) {
+    return this.rooms.containsKey(id);
+  }
+
 }
