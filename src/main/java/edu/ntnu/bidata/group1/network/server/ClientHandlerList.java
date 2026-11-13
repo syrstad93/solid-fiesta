@@ -119,7 +119,16 @@ public class ClientHandlerList {
    *
    * @return a {@link Collection} of all {@link ClientHandler} objects in the map.
    */
-  public Collection<ClientHandler> getAll() {
+  public Collection<ClientHandler> getValues() {
     return this.handlers.values();
+  }
+
+  /**
+   * Returns the number of {@link ClientHandler} objects.
+   *
+   * @return the number of {@link ClientHandler} objects.
+   */
+  public int size() {
+    return this.handlers.size();
   }
 }

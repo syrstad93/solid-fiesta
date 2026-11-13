@@ -134,7 +134,12 @@ public class ServerLogic {
 
     String command = messageWorker.getCommand();
 
-    //TODO: Implement command handling logic.
+    switch (command)  {
+      case "PING" -> pingResponse(messageWorker, sender);
+      default -> throw new IllegalArgumentException(
+          "Command not recognized by server. Unrecognized command: " + command
+      );
+    }
   }
 
   /**
@@ -176,8 +181,29 @@ public class ServerLogic {
       throw new IllegalArgumentException("MessageWorker cannot be null.");
     }
 
-    for (ClientHandler client : this.handlers.getAll()) {
+    for (ClientHandler client : this.handlers.getValues()) {
       client.sendToClient(messageWorker.getMessage());
     }
+  }
+
+  /**
+   * Responds to a ping command from a client by sending {@code PONG} back to the client.
+   *
+   * @param incoming is the {@link MessageWorker} from the client that sent the ping command.
+   * @param client is the {@link ClientHandler} that sent the ping command.
+   * @throws IllegalArgumentException if {@code client} is {@code null}.
+   */
+  private void pingResponse(MessageWorker incoming, ClientHandler client) {
+    if (client == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+
+    MessageWorker outgoing = new MessageWorker()
+        .setSource("SE00")
+        .setDestination(incoming.getSource())
+        .setCommand("PONG")
+        .buildMessage();
+
+    client.sendToClient(outgoing.getMessage());
   }
 }

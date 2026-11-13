@@ -1,6 +1,5 @@
 package edu.ntnu.bidata.group1.network.server;
 
-import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -38,7 +37,7 @@ public class Server implements Messenger<String, ClientHandler> {
 
   private ServerLogic logic;
 
-  private long lastUsedId;
+  private long nextAvailableId;
 
   /**
    * Instantiates {@link Server} with a ServerSocket that uses the port number given by
@@ -56,7 +55,7 @@ public class Server implements Messenger<String, ClientHandler> {
 
     this.handlers = ClientHandlerList.getInstance();
     this.logic = new ServerLogic(this);
-    this.lastUsedId = 1L;
+    this.nextAvailableId = 1L;
   }
 
   /**
@@ -103,7 +102,7 @@ public class Server implements Messenger<String, ClientHandler> {
       try {
         Socket socket = this.server.accept();
 
-        ClientHandler handler = new ClientHandler(socket, getNextAvailableId(), this);
+        ClientHandler handler = new ClientHandler(socket, useNextAvailableId(), this);
 
         this.handlers.add(handler);
         this.executor.submit(handler);
@@ -118,13 +117,24 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Increments {@link #lastUsedId} by {@code 1} and returns it.
+   * Returns the next available ID.
+   * After returning, the next available ID is incremented by 1.
    *
-   * @return the value of {@link #lastUsedId} after incrementing by {@code 1}.
+   * @return the next available ID.
    */
-  private long getNextAvailableId() {
-    this.lastUsedId++;
-    return this.lastUsedId;
+  private long useNextAvailableId() {
+    long nextId = this.nextAvailableId;
+    this.nextAvailableId++;
+    return nextId;
+  }
+
+  /**
+   * Returns the next available ID without updating it.
+   *
+   * @return the next available ID.
+   */
+  public long peekNextAvailableId() {
+    return this.nextAvailableId;
   }
 
   /**
@@ -148,6 +158,15 @@ public class Server implements Messenger<String, ClientHandler> {
    */
   public ServerLogic logic() {
     return this.logic;
+  }
+
+  /**
+   * Returns the {@link ClientHandlerList} that contains all connected clients.
+   *
+   * @return the {@link ClientHandlerList} that contains all connected clients.
+   */
+  public ClientHandlerList handlers() {
+    return this.handlers;
   }
 
   /**
