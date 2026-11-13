@@ -192,10 +192,14 @@ public class ServerLogic {
    * @param incoming is the {@link MessageWorker} from the client that sent the ping command.
    * @param client is the {@link ClientHandler} that sent the ping command.
    * @throws IllegalArgumentException if {@code client} is {@code null}.
+   * @throws IllegalArgumentException if {@code incoming} is {@code null}.
    */
   private void pingResponse(MessageWorker incoming, ClientHandler client) {
     if (client == null) {
       throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+    if (incoming == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
     }
 
     MessageWorker outgoing = new MessageWorker()

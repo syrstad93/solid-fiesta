@@ -197,6 +197,10 @@ public class Server implements Messenger<String, ClientHandler> {
    */
   @Override
   public void onDisconnect(ClientHandler client) {
-    // TODO: Implement what to do when receiving notice that a socket is disconnecting.
+    if (client == null) {
+      throw new IllegalArgumentException("Client cannot be null.");
+    }
+
+    this.handlers.remove(client);
   }
 }

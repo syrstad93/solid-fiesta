@@ -82,7 +82,51 @@ public class ServerTest {
     for (long id = 1; id <= numberOfConnections; id++) {
       assertEquals(id, server.handlers().get(id).getId());
     }
+    assertEquals(6, server.peekNextAvailableId());
 
+    server.closeServer();
+    startThread.join();
+
+    if (serverException.get() != null) {
+      throw new RuntimeException("Server start method threw an exception", serverException.get());
+    }
+  }
+
+  @Test
+  public void fromSocketSendPingReceivePong() throws IOException, InterruptedException {
+    Server server = Server.getInstance();
+    AtomicReference<Exception> serverException = new AtomicReference<>();
+
+    CountDownLatch serverReady = new CountDownLatch(1);
+
+    Thread startThread = new Thread(() -> {
+      try {
+        server.start(serverReady);
+      } catch (IOException e) {
+        serverException.set(e);
+      }
+    });
+
+    startThread.start();
+    serverReady.await();
+
+    // Connect a socket to the server
+    java.net.Socket socket = new java.net.Socket(
+        UniversallyAvailableInformation.LOCALHOST, UniversallyAvailableInformation.PORT_NUMBER
+    );
+
+    // Send a ping message to the server
+    java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
+    out.println("SE00/0000/PING/=");
+
+    // Read the response from the server
+    java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()));
+    String response = in.readLine();
+
+    // Check that the response is "pong"
+    assertEquals("CH01/SE00/PONG/=", response);
+
+    socket.close();
     server.closeServer();
     startThread.join();
 
