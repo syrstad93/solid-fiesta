@@ -55,7 +55,7 @@ public class Server implements Messenger<String, ClientHandler> {
 
     this.handlers = ClientHandlerList.getInstance();
     this.logic = new ServerLogic(this);
-    this.nextAvailableId = 1L;
+    this.nextAvailableId = this.handlers.size() + 1;
   }
 
   /**
@@ -92,10 +92,17 @@ public class Server implements Messenger<String, ClientHandler> {
    *   the {@link ServerSocket} that it refers to remains open.
    * </p>
    *
+   * @param serverReady is a {@link CountDownLatch} that is counted down when the server is ready
+   *                    to accept connections.
    * @throws IOException if an {@link IOException} is thrown by the {@link ServerSocket}
    *        that is not caused by it purposely being closed down.
+   * @throws IllegalArgumentException if {@code serverReady} is {@code null}.
    */
   public void start(CountDownLatch serverReady) throws IOException  {
+    if (serverReady == null) {
+      throw new IllegalArgumentException("CountDownLatch cannot be null.");
+    }
+
     serverReady.countDown();
 
     while (this.server != null && !this.server.isClosed()) {
@@ -139,6 +146,8 @@ public class Server implements Messenger<String, ClientHandler> {
 
   /**
    * Closes the {@link ServerSocket} and shuts down the {@link ExecutorService}.
+   * After closing the server, the {@link #instance} is set to {@code null},
+   * which allows for an entirely new instance to be created.
    *
    * @throws IOException if an I/O error occurs when closing the socket.
    */
@@ -149,6 +158,8 @@ public class Server implements Messenger<String, ClientHandler> {
     if (this.executor != null && !this.executor.isShutdown()) {
       this.executor.shutdown();
     }
+
+    instance = null;
   }
 
   /**
@@ -190,8 +201,7 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Performs whatever actions are necessary to safely disconnect a client.
-   * TODO: Update Javadoc when method is implemented.
+   * Receives a client that disconnects, and removes it from the {@link ClientHandlerList}.
    *
    * @param client is the client that disconnects.
    */

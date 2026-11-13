@@ -131,4 +131,12 @@ public class ClientHandlerList {
   public int size() {
     return this.handlers.size();
   }
+
+  /**
+   * Resets the instance of this class to {@code null}, allowing for a new instance to be created.
+   * All {@link ClientHandler} objects in the map will be lost.
+   */
+  public void resetInstance() {
+    instance = null;
+  }
 }
