@@ -151,6 +151,28 @@ public class MessageWorker {
   }
 
   /**
+   * Sets the source part of the message to {@link #source}.
+   *
+   * @param prefix is the prefix of the source part of the message.
+   * @param id is the ID of the source part of the message.
+   * @return this instance of {@link MessageWorker}.
+   * @throws IllegalArgumentException if {@code source} is {@code null}.
+   */
+  public MessageWorker setSource(String prefix, long id) {
+    if (prefix == null) {
+      throw new IllegalArgumentException("Source cannot be null.");
+    }
+
+    if (id < 9) {
+      this.source = prefix + "0" + id;
+    } else {
+      this.source = prefix + id;
+    }
+
+    return this;
+  }
+
+  /**
    * Sets the command part of the message to {@link #command}.
    *
    * @param command is the command part of the message.

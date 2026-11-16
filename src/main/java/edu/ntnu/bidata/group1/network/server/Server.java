@@ -1,12 +1,12 @@
 package edu.ntnu.bidata.group1.network.server;
 
-import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,7 +37,7 @@ public class Server implements Messenger<String, ClientHandler> {
 
   private ServerLogic logic;
 
-  private long lastUsedId;
+  private long nextAvailableId;
 
   /**
    * Instantiates {@link Server} with a ServerSocket that uses the port number given by
@@ -55,7 +55,7 @@ public class Server implements Messenger<String, ClientHandler> {
 
     this.handlers = ClientHandlerList.getInstance();
     this.logic = new ServerLogic(this);
-    this.lastUsedId = 1L;
+    this.nextAvailableId = this.handlers.size() + 1;
   }
 
   /**
@@ -92,15 +92,24 @@ public class Server implements Messenger<String, ClientHandler> {
    *   the {@link ServerSocket} that it refers to remains open.
    * </p>
    *
+   * @param serverReady is a {@link CountDownLatch} that is counted down when the server is ready
+   *                    to accept connections.
    * @throws IOException if an {@link IOException} is thrown by the {@link ServerSocket}
    *        that is not caused by it purposely being closed down.
+   * @throws IllegalArgumentException if {@code serverReady} is {@code null}.
    */
-  public void start() throws IOException  {
+  public void start(CountDownLatch serverReady) throws IOException  {
+    if (serverReady == null) {
+      throw new IllegalArgumentException("CountDownLatch cannot be null.");
+    }
+
+    serverReady.countDown();
+
     while (this.server != null && !this.server.isClosed()) {
       try {
         Socket socket = this.server.accept();
 
-        ClientHandler handler = new ClientHandler(socket, getNextAvailableId(), this);
+        ClientHandler handler = new ClientHandler(socket, useNextAvailableId(), this);
 
         this.handlers.add(handler);
         this.executor.submit(handler);
@@ -115,13 +124,60 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Increments {@link #lastUsedId} by {@code 1} and returns it.
+   * Returns the next available ID.
+   * After returning, the next available ID is incremented by 1.
    *
-   * @return the value of {@link #lastUsedId} after incrementing by {@code 1}.
+   * @return the next available ID.
    */
-  private long getNextAvailableId() {
-    this.lastUsedId++;
-    return this.lastUsedId;
+  private long useNextAvailableId() {
+    long nextId = this.nextAvailableId;
+    this.nextAvailableId++;
+    return nextId;
+  }
+
+  /**
+   * Returns the next available ID without updating it.
+   *
+   * @return the next available ID.
+   */
+  public long peekNextAvailableId() {
+    return this.nextAvailableId;
+  }
+
+  /**
+   * Closes the {@link ServerSocket} and shuts down the {@link ExecutorService}.
+   * After closing the server, the {@link #instance} is set to {@code null},
+   * which allows for an entirely new instance to be created.
+   *
+   * @throws IOException if an I/O error occurs when closing the socket.
+   */
+  public void closeServer() throws IOException {
+    if (this.server != null && !this.server.isClosed()) {
+      this.server.close();
+    }
+    if (this.executor != null && !this.executor.isShutdown()) {
+      this.executor.shutdown();
+    }
+
+    instance = null;
+  }
+
+  /**
+   * Returns the logic class that handles the server's logic.
+   *
+   * @return the {@link ServerLogic} class.
+   */
+  public ServerLogic logic() {
+    return this.logic;
+  }
+
+  /**
+   * Returns the {@link ClientHandlerList} that contains all connected clients.
+   *
+   * @return the {@link ClientHandlerList} that contains all connected clients.
+   */
+  public ClientHandlerList handlers() {
+    return this.handlers;
   }
 
   /**
@@ -145,13 +201,16 @@ public class Server implements Messenger<String, ClientHandler> {
   }
 
   /**
-   * Performs whatever actions are necessary to safely disconnect a client.
-   * TODO: Update Javadoc when method is implemented.
+   * Receives a client that disconnects, and removes it from the {@link ClientHandlerList}.
    *
    * @param client is the client that disconnects.
    */
   @Override
   public void onDisconnect(ClientHandler client) {
-    // TODO: Implement what to do when receiving notice that a socket is disconnecting.
+    if (client == null) {
+      throw new IllegalArgumentException("Client cannot be null.");
+    }
+
+    this.handlers.remove(client);
   }
 }

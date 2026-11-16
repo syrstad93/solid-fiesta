@@ -1,5 +1,6 @@
 package edu.ntnu.bidata.group1.network.server;
 
+import edu.ntnu.bidata.group1.utility.MessageWorker;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,15 +43,18 @@ public class ClientHandler implements Runnable  {
   }
 
   /**
-   * Maintains a loop that waits to receive commands from the client. When a message is received,
-   * it is passed on through the {@link Messenger} interface.
+   * Maintains a loop that waits to receive command messages from the client.
+   * When a message is received, the message source is updated to this {@link ClientHandler},
+   * and then it is passed on through the {@link Messenger} interface.
    */
   @Override
   public void run() {
     try {
-      String command;
-      while ((command = this.in.readLine()) != null) {
-        this.messenger.onMessage(command, this);
+      String message;
+      while ((message = this.in.readLine()) != null) {
+        MessageWorker messageWorker = new MessageWorker(message);
+        messageWorker.setSource("CH", this.id).buildMessage();
+        this.messenger.onMessage(messageWorker.getMessage(), this);
       }
     } catch (IOException e) {
       System.out.println("Connection error: " + e.getMessage());
