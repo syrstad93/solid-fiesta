@@ -2,7 +2,10 @@ package edu.ntnu.bidata.group1.device;
 
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 import edu.ntnu.bidata.group1.network.server.Messenger;
+import edu.ntnu.bidata.group1.utility.MessageWorker;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base class for devices that communicate with a server through a client connection.
@@ -14,7 +17,7 @@ import java.io.IOException;
 public abstract class Device implements Messenger<String, ClientConnectionHolder> {
   public ClientConnectionHolder connection;
   private long id;
-  private final Type type;
+  protected Map<String, Object> properties;
 
   /**
    * Creates a device of the given type and starts receiving messages over its connection.
@@ -28,7 +31,8 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
    */
   public Device(Type type) throws IOException, InterruptedException {
     this.connection = new ClientConnectionHolder<>(this);
-    this.type = type;
+    this.properties = new HashMap<>();
+    this.properties.put("type", type);
     connection.receive();
   }
 
@@ -51,7 +55,7 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
   }
 
   Type getType() {
-    return type;
+    return ((Type) this.properties.get("type"));
   }
 
   /**
@@ -70,5 +74,30 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
     } catch (IOException | InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  protected void sendState() throws IOException, InterruptedException{
+    for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      MessageWorker msg = new MessageWorker();
+      msg.setDestination("SE00");
+      msg.setCommand(entry.getKey() + ":" + entry.getValue());
+      msg.setSource("CH" + this.getId());
+      msg.buildMessage();
+      this.connection.message(msg.getMessage());
+    }
+  }
+
+  protected void messageDaemon() {
+    Thread md = new Thread(() -> {
+      while (true) {
+        try {
+          sendState();
+        } catch (IOException | InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    });
+    md.setDaemon(true);
+    md.start();
   }
 }
