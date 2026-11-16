@@ -1,37 +1,39 @@
-package edu.ntnu.bidata.group1.device;
+package edu.ntnu.bidata.group1.device.Actuator;
 
+import edu.ntnu.bidata.group1.device.Device;
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 
-public class Light extends Device {
+public class Lamp extends Device {
 
     /**
-     * Stores the most recently received light value.
+     * Stores the current state of the lamp.
      */
-
     protected String currentValue;
-    public Light() throws Exception {
+
+    /**
+     * Creates a lamp actuator and connects it to the server.
+     */
+    public Lamp() throws Exception {
         super();
     }
 
-/**
- * Returns the current light value.
- *
- * @return the current light value.
- */
-    
+    /**
+     * Returns the current state of the lamp.
+     *
+     * @return the current state of the lamp.
+     */
     public String readValue() {
         return currentValue;
     }
 
-/**
- * Called automatically when the light device receives a message from the server.
- *
- * @param message the received message.
- * @param sender the connection that sent the message.
- */
-
+    /**
+     * Called automatically when the lamp receives a message from the server.
+     *
+     * @param message the received message.
+     * @param sender the connection that sent the message.
+     */
     @Override
     public void onMessage(String message, ClientConnectionHolder sender) {
-        System.out.println("Light: " + message);
+        System.out.println("Lamp: " + message);
     }
 }

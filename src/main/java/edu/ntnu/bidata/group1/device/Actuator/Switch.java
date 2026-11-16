@@ -1,7 +1,8 @@
-package edu.ntnu.bidata.group1.device;
+package edu.ntnu.bidata.group1.device.Actuator;
 
 import java.io.IOException;
 
+import edu.ntnu.bidata.group1.device.Device;
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 
 public class Switch extends Device {
