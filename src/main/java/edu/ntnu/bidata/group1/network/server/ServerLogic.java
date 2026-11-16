@@ -132,10 +132,11 @@ public class ServerLogic {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    String command = messageWorker.getCommand();
+    String command = messageWorker.getCommand().substring(0,4);
 
     switch (command)  {
       case "PING" -> pingResponse(messageWorker, sender);
+      //case "UPDA" -> updateStatus(messageWorker, sender);
       default -> throw new IllegalArgumentException(
           "Command not recognized by server. Unrecognized command: " + command
       );
