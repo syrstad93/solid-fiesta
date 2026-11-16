@@ -136,6 +136,28 @@ public class MessageWorker {
   }
 
   /**
+   * Sets the destination part of the message to {@link #destination}.
+   *
+   * @param prefix is the prefix of the destination part of the message.
+   * @param id is the ID of the destination part of the message.
+   * @return this instance of {@link MessageWorker}.
+   * @throws IllegalArgumentException if {@code destination} is {@code null}.
+   */
+  public MessageWorker setDestination(String prefix, long id) {
+    if (prefix == null) {
+      throw new IllegalArgumentException("Destination cannot be null.");
+    }
+
+    if (id < 9) {
+      this.destination = prefix + "0" + id;
+    } else {
+      this.destination = prefix + id;
+    }
+
+    return this;
+  }
+
+  /**
    * Sets the source part of the message to {@link #source}.
    *
    * @param source is the source part of the message.

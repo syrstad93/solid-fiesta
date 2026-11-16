@@ -80,6 +80,7 @@ public class RoomLogic {
     switch (cmd) {
       case "RO-LEAVE" -> this.room.remove(sender.getId());
       case "RO-ADD" -> this.room.add(sender);
+      case "RO-GET_CLIENT_IDS" -> this.room.sendClientIds(sender);
       default -> throw new IllegalArgumentException("Invalid command: " + cmd);
     }
   }

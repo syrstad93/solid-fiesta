@@ -26,6 +26,7 @@ public class Room {
   public Room(long id) {
     setId(id);
     this.handlers = new ConcurrentHashMap<>();
+    this.logic = new RoomLogic(this);
   }
 
   /**
@@ -128,6 +129,48 @@ public class Room {
    */
   public Collection<Long> getKeys() {
     return Collections.unmodifiableCollection(this.handlers.keySet());
+  }
+
+  /**
+   * Checks if the {@link Room} is empty,
+   * i.e. if there are any {@link ClientHandler} objects in the map.
+   */
+  public boolean isEmpty() {
+    return this.handlers.isEmpty();
+  }
+
+  /**
+   * Sends the IDs of all {@link ClientHandler} objects in this {@link Room}
+   * to the given {@link ClientHandler}. The IDs are sent as a dash-separated {@link String}.
+   *
+   * <p>If there are no {@link ClientHandler} objects in the room, the string "00" is sent instead.
+   * </p>
+   *
+   * @param recipient is the {@link ClientHandler} to send the IDs to.
+   * @throws IllegalArgumentException if {@code recipient} is {@code null}.
+   */
+  public void sendClientIds(ClientHandler recipient) throws IllegalArgumentException {
+    if (recipient == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+
+    StringBuilder ids = new StringBuilder();
+
+    if (!this.handlers.isEmpty()) {
+      for (Long id : getKeys()) {
+        ids.append(id).append("-");
+      }
+    } else {
+      ids.append("00");
+    }
+
+    MessageWorker messageWorker = new MessageWorker()
+        .setDestination("CH", recipient.getId())
+        .setSource("RO", this.getId())
+        .setCommand(ids.toString())
+        .buildMessage();
+
+    recipient.sendToClient(messageWorker.getMessage());
   }
 
   /**
