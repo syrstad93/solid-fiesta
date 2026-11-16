@@ -190,7 +190,7 @@ public class Room {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    // TODO: Implement message handling logic for the room. Consider a logic class for Room.
+    this.logic.receiveMessage(messageWorker, sender);
   }
 
 }
