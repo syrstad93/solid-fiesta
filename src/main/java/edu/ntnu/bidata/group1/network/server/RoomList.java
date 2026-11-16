@@ -1,6 +1,7 @@
 package edu.ntnu.bidata.group1.network.server;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -109,7 +110,7 @@ public class RoomList {
    * @return all the {@link Room} objects in the map.
    */
   public Collection<Room> getValues() {
-    return this.rooms.values();
+    return Collections.unmodifiableCollection(this.rooms.values());
   }
 
   /**

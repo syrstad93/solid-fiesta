@@ -2,6 +2,7 @@ package edu.ntnu.bidata.group1.network.server;
 
 import edu.ntnu.bidata.group1.utility.MessageWorker;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,7 @@ public class Room {
 
   private long id;
   private Map<Long, ClientHandler> handlers;
+  private RoomLogic logic;
 
   /**
    * Instantiates this class by setting an ID and an empty map of {@link ClientHandler} objects.
@@ -116,7 +118,7 @@ public class Room {
    * @return a {@link Collection} of all {@link ClientHandler} objects.
    */
   public Collection<ClientHandler> getValues() {
-    return this.handlers.values();
+    return Collections.unmodifiableCollection(this.handlers.values());
   }
 
   /**
@@ -125,7 +127,7 @@ public class Room {
    * @return a {@link Collection} of all IDs of the {@link ClientHandler} objects.
    */
   public Collection<Long> getKeys() {
-    return this.handlers.keySet();
+    return Collections.unmodifiableCollection(this.handlers.keySet());
   }
 
   /**
