@@ -3,13 +3,14 @@ package edu.ntnu.bidata.group1;
 import edu.ntnu.bidata.group1.network.server.Server;
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 public class Main {
 
   public static void main(String[] args)  {
     try {
       Server server = Server.getInstance();
-      server.start();
+      server.start(new CountDownLatch(1));
     } catch (IllegalArgumentException e)  {
       System.out.println("Error occurred. Please contact support.\n"
           + "Error description:\n"

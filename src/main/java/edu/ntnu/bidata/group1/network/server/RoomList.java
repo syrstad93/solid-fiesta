@@ -132,4 +132,13 @@ public class RoomList {
     return this.rooms.containsKey(id);
   }
 
+  /**
+   * Resets the instance of this class to {@code null}.
+   * This allows for a new instance to be created.
+   * All {@link Room} objects in the map will be lost.
+   */
+  public void resetInstance() {
+    instance = null;
+  }
+
 }
