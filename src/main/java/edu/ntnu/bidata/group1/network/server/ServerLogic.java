@@ -11,6 +11,7 @@ public class ServerLogic {
   private ClientHandlerList handlers;
   private RoomList rooms;
   private ClientStatusMap clientStatusMap;
+  private LinkedClients linkedClients;
 
   /**
    * Instantiates this class.
@@ -25,6 +26,7 @@ public class ServerLogic {
     this.handlers = ClientHandlerList.getInstance();
     this.rooms = RoomList.getInstance();
     this.clientStatusMap = ClientStatusMap.getInstance();
+    this.linkedClients = LinkedClients.getInstance();
   }
 
   /**
@@ -235,5 +237,6 @@ public class ServerLogic {
     int status = Integer.parseInt(cmdValue);
 
     this.clientStatusMap.put(client, status);
+    this.linkedClients.checkLinkTriggersAndSendCommandIfTriggered(client);
   }
 }
