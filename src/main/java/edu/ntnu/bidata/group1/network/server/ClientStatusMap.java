@@ -6,7 +6,8 @@ import java.util.HashMap;
  * A map of the status of all clients connected to the server.
  *
  * <p>
- *   This class is intended to be used as a singleton, and can be accessed by calling {@link #getInstance()}.
+ *   This class is intended to be used as a singleton,
+ *   and can be accessed by calling {@link #getInstance()}.
  * </p>
  */
 public class ClientStatusMap {
@@ -39,9 +40,21 @@ public class ClientStatusMap {
   }
 
   /**
-   * Puts a {@link ClientHandler} into the map and sets its status.
+   * Either:
    *
-   * @param client is the {@link ClientHandler} to add.
+   * <ul>
+   *   Puts a {@link ClientHandler} into the map and sets its status.
+   * </ul>
+   *
+   * <p>
+   *   or:
+   * </p>
+   *
+   * <ul>
+   *   Updates the status of an existing {@link ClientHandler} in the map.
+   * </ul>
+   *
+   * @param client is the {@link ClientHandler} in question.
    * @param status is the status to set.
    * @throws IllegalArgumentException if {@code client} is {@code null}.
    * @throws IllegalArgumentException if {@code client} is already in the map.
@@ -98,4 +111,30 @@ public class ClientStatusMap {
   /**
    * Returns the size of the map.
    */
+  public int size() {
+    return this.statusMap.size();
+  }
+
+  /**
+   * Checks if the map contains a {@link ClientHandler}.
+   *
+   * @param client is the {@link ClientHandler} to check for.
+   * @return {@code true} if the map contains the {@link ClientHandler}, {@code false} otherwise.
+   * @throws IllegalArgumentException if {@code client} is {@code null}.
+   */
+  public boolean contains(ClientHandler client) throws IllegalArgumentException {
+    if (client == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+    return this.statusMap.containsKey(client);
+  }
+
+  /**
+   * Checks if the map is empty.
+   *
+   * @return {@code true} if the map is empty, {@code false} otherwise.
+   */
+  public boolean isEmpty() {
+    return this.statusMap.isEmpty();
+  }
 }
