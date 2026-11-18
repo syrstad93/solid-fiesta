@@ -12,7 +12,7 @@ import java.util.Objects;
  *
  * <p>Actuators send their command specifications to controllers so that a controller knows what
  * it can ask a device to do. A specification is sent inside the command part of a message as a
- * comma-separated string (see {@link #toWireFormat()}):
+ * comma-separated string (see {@link #toMessageValue()}):
  * <ul>
  *   <li>{@code power,BOOLEAN}</li>
  *   <li>{@code value,INTEGER,0,100}</li>
@@ -188,7 +188,7 @@ public final class CommandSpec {
    *
    * @return for example {@code value,INTEGER,0,100}
    */
-  public String toWireFormat() {
+  public String toMessageValue() {
     return switch (type) {
       case NONE, BOOLEAN -> name + "," + type;
       case INTEGER -> name + "," + type + "," + (long) min + "," + (long) max;
@@ -198,52 +198,52 @@ public final class CommandSpec {
   }
 
   /**
-   * Reads a specification from the string produced by {@link #toWireFormat()}.
+   * Reads a specification from the string produced by {@link #toMessageValue()}.
    *
-   * @param wire the string received in a message
+   * @param value the string received in a message
    * @return the command specification
    * @throws IllegalArgumentException if the string is not a valid specification
    */
-  public static CommandSpec fromWireFormat(String wire) {
-    if (wire == null) {
+  public static CommandSpec fromMessageValue(String value) {
+    if (value == null) {
       throw new IllegalArgumentException("Command specification cannot be null.");
     }
-    String[] parts = wire.trim().split(",", -1);
+    String[] parts = value.trim().split(",", -1);
     if (parts.length < 2) {
-      throw new IllegalArgumentException("Malformed command specification: " + wire);
+      throw new IllegalArgumentException("Malformed command specification: " + value);
     }
     String name = parts[0];
     ParameterType type;
     try {
       type = ParameterType.valueOf(parts[1]);
     } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Unknown parameter type in: " + wire);
+      throw new IllegalArgumentException("Unknown parameter type in: " + value);
     }
     try {
       return switch (type) {
         case NONE -> {
-          expectParts(parts, 2, wire);
+          expectParts(parts, 2, value);
           yield noParameter(name);
         }
         case BOOLEAN -> {
-          expectParts(parts, 2, wire);
+          expectParts(parts, 2, value);
           yield bool(name);
         }
         case INTEGER -> {
-          expectParts(parts, 4, wire);
+          expectParts(parts, 4, value);
           yield integer(name, Long.parseLong(parts[2]), Long.parseLong(parts[3]));
         }
         case DECIMAL -> {
-          expectParts(parts, 4, wire);
+          expectParts(parts, 4, value);
           yield decimal(name, Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
         }
         case ENUM -> {
-          expectParts(parts, 3, wire);
+          expectParts(parts, 3, value);
           yield options(name, parts[2].split("\\|", -1));
         }
       };
     } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("Malformed range in: " + wire);
+      throw new IllegalArgumentException("Malformed range in: " + value);
     }
   }
 
@@ -301,9 +301,9 @@ public final class CommandSpec {
     }
   }
 
-  private static void expectParts(String[] parts, int expected, String wire) {
+  private static void expectParts(String[] parts, int expected, String value) {
     if (parts.length != expected) {
-      throw new IllegalArgumentException("Malformed command specification: " + wire);
+      throw new IllegalArgumentException("Malformed command specification: " + value);
     }
   }
 
@@ -341,6 +341,6 @@ public final class CommandSpec {
 
   @Override
   public String toString() {
-    return toWireFormat();
+    return toMessageValue();
   }
 }
