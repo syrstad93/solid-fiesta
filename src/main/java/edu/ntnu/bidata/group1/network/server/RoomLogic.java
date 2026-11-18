@@ -80,7 +80,7 @@ public class RoomLogic {
     switch (cmd) {
       case "RO-LEAVE" -> this.room.remove(sender.getId());
       case "RO-ADD" -> this.room.add(sender);
-      case "RO-GET_CLIENT_IDS" -> this.room.sendClientIds(sender);
+      case "RO-GET_CLIENT_IDS" -> sendClientIds(sender);
       default -> throw new IllegalArgumentException("Invalid command: " + cmd);
     }
   }
@@ -104,5 +104,79 @@ public class RoomLogic {
     for (ClientHandler client : this.room.getValues()) {
       client.sendToClient(message);
     }
+  }
+
+  /**
+   * Removes the {@link ClientHandler} with the ID of the source part of the message from the room.
+   *
+   * @param messageWorker is a {@link MessageWorker} with a command message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if the {@link ClientHandler} with the ID of the source part
+   *        of the message is not in the room.
+   */
+  private void removeClient(MessageWorker messageWorker) throws IllegalArgumentException {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+
+    long clientId = messageWorker.getSourceId();
+
+    if (!this.room.contains(clientId)) {
+      throw new IllegalArgumentException(
+          "ClientHandler with ID " + clientId + " does not exist in the room."
+      );
+    }
+
+    this.room.remove(clientId);
+  }
+
+  /**
+   * Adds the {@link ClientHandler} with the ID of the source part of the message to the room.
+   *
+   * @param messageWorker is a {@link MessageWorker} with a command message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   */
+  private void addClient(MessageWorker messageWorker) throws IllegalArgumentException {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+
+    long clientId = messageWorker.getSourceId();
+    ClientHandler client = ClientHandlerList.getInstance().get(clientId);
+    this.room.add(client);
+  }
+
+  /**
+   * Sends the IDs of all {@link ClientHandler} objects in the {@link Room}
+   * to the given {@link ClientHandler}. The IDs are sent as a dash-separated {@link String}.
+   *
+   * <p>If there are no {@link ClientHandler} objects in the room, the string "00" is sent instead.
+   * </p>
+   *
+   * @param recipient is the {@link ClientHandler} to send the IDs to.
+   * @throws IllegalArgumentException if {@code recipient} is {@code null}.
+   */
+  private void sendClientIds(ClientHandler recipient) throws IllegalArgumentException {
+    if (recipient == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+
+    StringBuilder ids = new StringBuilder();
+
+    if (!this.room.isEmpty()) {
+      for (Long id : this.room.getKeys()) {
+        ids.append(id).append("-");
+      }
+    } else {
+      ids.append("00");
+    }
+
+    MessageWorker messageWorker = new MessageWorker()
+        .setDestination("CH", recipient.getId())
+        .setSource("RO", this.room.getId())
+        .setCommand(ids.toString())
+        .buildMessage();
+
+    recipient.sendToClient(messageWorker.getMessage());
   }
 }
