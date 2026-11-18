@@ -2,6 +2,7 @@ package edu.ntnu.bidata.group1.utility;
 
 import edu.ntnu.bidata.group1.network.server.ClientHandler;
 import edu.ntnu.bidata.group1.network.server.Server;
+import java.util.Optional;
 
 /**
  * Manages a transmission message,
@@ -23,13 +24,13 @@ import edu.ntnu.bidata.group1.network.server.Server;
  *     {@code CH}: a {@link ClientHandler}. Is followed by the ID of the client handler.
  *   </li>
  *   <li>
- *     {@code SE}: the {@link Server}. Is followed by placeholder ID {@code 00}, or no ID at all.
+ *     {@code SE}: the {@link Server}. Is followed by placeholder ID {@code 000}, or no ID at all.
  *   </li>
  *   <li>
  *     {@code RO}: a room of clients. Is followed by the ID of the room.
  *   </li>
  *   <li>
- *     {@code AL}: broadcast to all. Is followed by placeholder ID {@code 00}, or no ID at all.
+ *     {@code AL}: broadcast to all. Is followed by placeholder ID {@code 000}, or no ID at all.
  *   </li>
  * </ul>
  * <p>
@@ -41,9 +42,15 @@ import edu.ntnu.bidata.group1.network.server.Server;
  *     {@code CH}: a {@link ClientHandler}. Is followed by the ID of the client handler.
  *   </li>
  *   <li>
- *     {@code SE}: the {@link Server}. Is followed by placeholder ID {@code 00}, or no ID at all.
+ *     {@code SE}: the {@link Server}. Is followed by placeholder ID {@code 000}, or no ID at all.
  *   </li>
  * </ul>
+ * <p>
+ *   IDs are written with {@value #ID_DIGITS} digits, padded with leading zeros: client 1 is
+ *   {@code CH001} and room 10 is {@code RO010}. IDs of 1000 and more are written in full. When
+ *   reading a message, any number of digits is accepted, so {@code CH1}, {@code CH01} and
+ *   {@code CH001} all mean client 1. Use {@link #address(String, long)} to build an address.
+ * </p>
  * <p>
  *   {@code Command} is the command information for the destination device.
  *   This part of the message is specific for the device.
@@ -53,6 +60,15 @@ import edu.ntnu.bidata.group1.network.server.Server;
  * </p>
  */
 public class MessageWorker {
+
+  /** How many digits an ID is written with in an address, padded with leading zeros. */
+  public static final int ID_DIGITS = 3;
+
+  /** Address of the server: {@code SE000}. */
+  public static final String SERVER = address("SE", 0);
+
+  /** Address that reaches every connected client: {@code AL000}. */
+  public static final String BROADCAST = address("AL", 0);
 
   private String message;
 
@@ -106,14 +122,14 @@ public class MessageWorker {
           "Message must contain a valid destination prefix: 'CH', 'SE', 'RO', or 'AL'."
       );
     }
-    if(message.length() - message.replace("/", "").length() != 3) {
+    if (message.length() - message.replace("/", "").length() != 3) {
       throw new IllegalArgumentException(
           "Message must contain exactly three '/' characters to separate the parts."
       );
     }
     if (!message.endsWith("=")) {
       throw new IllegalArgumentException(
-          "Indication that the message has ended must ended ('=') is missing"
+          "Message must end with the end-of-message character ('=')."
       );
     }
     this.message = message;
@@ -136,6 +152,24 @@ public class MessageWorker {
   }
 
   /**
+   * Builds an address from a prefix and an ID, with the ID padded to {@value #ID_DIGITS} digits.
+   *
+   * @param prefix is the prefix, {@code CH}, {@code SE}, {@code RO} or {@code AL}.
+   * @param id is the ID; must not be negative.
+   * @return the address, for example {@code CH001} for prefix {@code CH} and ID 1.
+   * @throws IllegalArgumentException if {@code prefix} is {@code null} or {@code id} is negative.
+   */
+  public static String address(String prefix, long id) {
+    if (prefix == null) {
+      throw new IllegalArgumentException("Prefix cannot be null.");
+    }
+    if (id < 0) {
+      throw new IllegalArgumentException("ID cannot be negative.");
+    }
+    return prefix + String.format("%0" + ID_DIGITS + "d", id);
+  }
+
+  /**
    * Sets the destination part of the message to {@link #destination}.
    *
    * @param prefix is the prefix of the destination part of the message.
@@ -148,12 +182,7 @@ public class MessageWorker {
       throw new IllegalArgumentException("Destination cannot be null.");
     }
 
-    if (id < 9) {
-      this.destination = prefix + "0" + id;
-    } else {
-      this.destination = prefix + id;
-    }
-
+    this.destination = address(prefix, id);
     return this;
   }
 
@@ -185,12 +214,7 @@ public class MessageWorker {
       throw new IllegalArgumentException("Source cannot be null.");
     }
 
-    if (id < 9) {
-      this.source = prefix + "0" + id;
-    } else {
-      this.source = prefix + id;
-    }
-
+    this.source = address(prefix, id);
     return this;
   }
 
@@ -332,6 +356,45 @@ public class MessageWorker {
    */
   public String getCommand() {
     return this.command;
+  }
+
+  /**
+   * Returns the key of the command part: the text before the first {@code :}, or the whole
+   * command if it has no {@code :}. For {@code value:75} the key is {@code value}; for
+   * {@code GET-COMMANDS} it is {@code GET-COMMANDS}.
+   *
+   * @return the trimmed key, or {@code null} if no command is set.
+   */
+  public String getCommandKey() {
+    if (this.command == null) {
+      return null;
+    }
+    int separator = this.command.indexOf(Protocol.SEPARATOR);
+    return (separator < 0 ? this.command : this.command.substring(0, separator)).trim();
+  }
+
+  /**
+   * Returns the value of the command part: the text after the first {@code :}. For
+   * {@code value:75} the value is {@code 75}.
+   *
+   * @return the trimmed value, or an empty string if the command has no value.
+   */
+  public String getCommandValue() {
+    if (this.command == null) {
+      return "";
+    }
+    int separator = this.command.indexOf(Protocol.SEPARATOR);
+    return separator < 0 ? "" : this.command.substring(separator + 1).trim();
+  }
+
+  /**
+   * Returns the protocol message the command's key stands for.
+   *
+   * @return the {@link Protocol} constant, or empty if the key is not part of the protocol, for
+   *        example because it is a device-specific command such as {@code power}.
+   */
+  public Optional<Protocol> getProtocol() {
+    return Protocol.fromKey(getCommandKey());
   }
 
   /**
