@@ -10,6 +10,8 @@ public class ServerLogic {
   private Server server;
   private ClientHandlerList handlers;
   private RoomList rooms;
+  private ClientStatusMap clientStatusMap;
+  private LinkedClients linkedClients;
 
   /**
    * Instantiates this class.
@@ -23,6 +25,8 @@ public class ServerLogic {
     setServer(server);
     this.handlers = ClientHandlerList.getInstance();
     this.rooms = RoomList.getInstance();
+    this.clientStatusMap = ClientStatusMap.getInstance();
+    this.linkedClients = LinkedClients.getInstance();
   }
 
   /**
@@ -132,10 +136,11 @@ public class ServerLogic {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    String command = messageWorker.getCommand();
+    String command = messageWorker.getCommand().substring(0,4);
 
     switch (command)  {
       case "PING" -> pingResponse(messageWorker, sender);
+      case "UPDA" -> updateStatus(messageWorker, sender);
       default -> throw new IllegalArgumentException(
           "Command not recognized by server. Unrecognized command: " + command
       );
@@ -209,5 +214,29 @@ public class ServerLogic {
         .buildMessage();
 
     client.sendToClient(outgoing.getMessage());
+  }
+
+  /**
+   * Updates the status of a client in the {@link ClientStatusMap} based on the command message
+   * of the {@link MessageWorker}.
+   *
+   * @param messageWorker is a {@link MessageWorker} for the command message.
+   * @param client is the {@link ClientHandler} that sent the message.
+   * @throws IllegalArgumentException if {@code messageWorker} is {@code null}.
+   * @throws IllegalArgumentException if {@code client} is {@code null}.
+   */
+  private void updateStatus(MessageWorker messageWorker, ClientHandler client) {
+    if (messageWorker == null) {
+      throw new IllegalArgumentException("MessageWorker cannot be null.");
+    }
+    if (client == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+
+    String cmdValue = messageWorker.getCommand().substring(4);
+    int status = Integer.parseInt(cmdValue);
+
+    this.clientStatusMap.put(client, status);
+    this.linkedClients.checkLinkTriggersAndSendCommandIfTriggered(client);
   }
 }
