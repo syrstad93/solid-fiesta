@@ -88,7 +88,7 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
     if (connection != null) {
       throw new IllegalStateException(name + " has already been started.");
     }
-    connection = new ClientConnectionHolder<>(this, this::onConnected);
+    connection = new ClientConnectionHolder<>(this);
     onStarted();
   }
 
@@ -164,12 +164,15 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
 
   /**
    * Runs after every successful connection to the server, first and later ones: introduces this
-   * device with {@code HELLO}, and after a reconnect calls {@link #onReconnected()}.
+   * device with {@code HELLO}, and after a reconnect calls {@link #onReconnected()}. Called by
+   * the {@link ClientConnectionHolder}; subclasses override {@link #onReconnected()} or
+   * {@link #onStarted()} instead.
    *
    * @param holder the connection that was just made; used directly, because on the first
    *     connection {@link #connection} is not assigned yet
    */
-  private void onConnected(ClientConnectionHolder<Device> holder) {
+  @Override
+  public final void onConnect(ClientConnectionHolder holder) {
     MessageWorker message = new MessageWorker()
         .setDestination(MessageWorker.SERVER)
         .setSource("CH", this.id)
