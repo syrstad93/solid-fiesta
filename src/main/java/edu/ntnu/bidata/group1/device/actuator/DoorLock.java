@@ -14,7 +14,7 @@ package edu.ntnu.bidata.group1.device.actuator;
  */
 public class DoorLock extends Actuator {
 
-  /** Valid commands */
+  // Valid commands
   public static final String LOCK = "lock";
   public static final String UNLOCK = "unlock";
 
