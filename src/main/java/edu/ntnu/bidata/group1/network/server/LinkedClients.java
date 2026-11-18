@@ -209,6 +209,31 @@ public class LinkedClients {
   }
 
   /**
+   * Checks is the {@link Link} at the given {@code index} of the list of links for the given
+   * {@code source} client is triggered or not.
+   *
+   * @param source is the {@link ClientHandler} that is the source of the link.
+   * @param index is the index of the link in the list of links for the source client.
+   * @return {@code true} if the link is triggered, {@code false} otherwise.
+   * @throws IllegalArgumentException if {@code source} is {@code null}.
+   * @throws IllegalArgumentException if {@code source} is not in the map.
+   * @throws IllegalArgumentException if {@code index} is out of bounds.
+   */
+  public boolean linkIsTriggered(ClientHandler source, int index) {
+    if (source == null) {
+      throw new IllegalArgumentException("Source client cannot be null.");
+    }
+    if (!this.links.containsKey(source)) {
+      throw new IllegalArgumentException("Source client is not in the map.");
+    }
+    if (index < 0 || index >= this.links.get(source).size()) {
+      throw new IllegalArgumentException("Index is out of bounds.");
+    }
+
+    return this.links.get(source).get(index).triggered;
+  }
+
+  /**
    * Removes the {@link Link} at the given {@code index}
    * of the list of links for the given {@code source} client.
    *
@@ -248,6 +273,38 @@ public class LinkedClients {
     }
 
     this.links.remove(source);
+  }
+
+  /**
+   * Returns the number of links for the given {@code source} client.
+   *
+   * @param source is the {@link ClientHandler} that is the source of the links.
+   * @return the number of links for the given {@code source} client.
+   * @throws IllegalArgumentException if {@code source} is {@code null}.
+   * @throws IllegalArgumentException if {@code source} is not in the map.
+   */
+  public int getNumberOfLinks(ClientHandler source) {
+    if (source == null) {
+      throw new IllegalArgumentException("Source client cannot be null.");
+    }
+    if (!this.links.containsKey(source)) {
+      throw new IllegalArgumentException("Source client is not in the map.");
+    }
+
+    return this.links.get(source).size();
+  }
+
+  /**
+   * Returns the total number of links from all source clients.
+   *
+   * @return the total number of links from all source clients.
+   */
+  public int getNumberOfLinks() {
+    int total = 0;
+    for (List<Link> linkList : this.links.values()) {
+      total += linkList.size();
+    }
+    return total;
   }
 
   /**
