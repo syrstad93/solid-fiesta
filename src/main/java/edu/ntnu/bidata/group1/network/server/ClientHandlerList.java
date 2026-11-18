@@ -18,7 +18,7 @@ public class ClientHandlerList {
   /**
    * Instantiates the class with an empty map.
    */
-  private ClientHandlerList()  {
+  private ClientHandlerList() {
     this.handlers = new ConcurrentHashMap<>();
   }
 
@@ -75,6 +75,20 @@ public class ClientHandlerList {
   }
 
   /**
+   * Removes a {@link ClientHandler} from the map by its ID.
+   *
+   * @param id is the ID of the {@link ClientHandler} to remove from the map.
+   * @throws IllegalArgumentException if {@code id} is not in the map.
+   */
+  public void remove(long id) throws IllegalArgumentException {
+    if (!this.handlers.containsKey(id)) {
+      throw new IllegalArgumentException(
+          "ClientHandler with ID " + id + " does not exist.");
+    }
+    this.handlers.remove(id);
+  }
+
+  /**
    * Removes a {@link ClientHandler} from the map, but only if it is still the one registered under
    * its ID. When a client reconnects and takes over its old ID, the old connection's handler is
    * no longer in the map, and must not remove the new one.
@@ -102,20 +116,6 @@ public class ClientHandlerList {
       throw new IllegalArgumentException("ClientHandler cannot be null.");
     }
     return this.handlers.put(handler.getId(), handler);
-  }
-
-  /**
-   * Removes a {@link ClientHandler} from the map by its ID.
-   *
-   * @param id is the ID of the {@link ClientHandler} to remove from the map.
-   * @throws IllegalArgumentException if {@code id} is not in the map.
-   */
-  public void remove(long id) throws IllegalArgumentException {
-    if (!this.handlers.containsKey(id)) {
-      throw new IllegalArgumentException(
-          "ClientHandler with ID " + id + " does not exist.");
-    }
-    this.handlers.remove(id);
   }
 
   /**

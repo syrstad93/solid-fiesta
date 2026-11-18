@@ -45,7 +45,7 @@ public class DoorLock extends Actuator {
     switch (name) {
       case LOCK -> properties.put("locked", true);
       case UNLOCK -> properties.put("locked", false);
-      default -> { }
+      default -> {}
     }
   }
 

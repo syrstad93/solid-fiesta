@@ -8,17 +8,13 @@ import java.util.Optional;
  * Manages a transmission message,
  * and contains methods for setting, building, editing and returning the specific parts.
  *
- * <p>
- *   A command message is a segmented {@link String} with the below structure.
- *   The separation between each segment is indicated by a {@code /}.
- * </p>
- * <p>
- *   {@code Destination/Source/Command/End of transmission}
- * </p>
- * <p>
- *   {@code Destination} contains a prefix, followed by the ID of the recipient if relevant.
- *   These are the possible prefixes:
- * </p>
+ * <p>A command message is a segmented {@link String} with the below structure.
+ * The separation between each segment is indicated by a {@code /}.
+ *
+ * <p>{@code Destination/Source/Command/End of transmission}
+ *
+ * <p>{@code Destination} contains a prefix, followed by the ID of the recipient if relevant.
+ * These are the possible prefixes:
  * <ul>
  *   <li>
  *     {@code CH}: a {@link ClientHandler}. Is followed by the ID of the client handler.
@@ -33,10 +29,9 @@ import java.util.Optional;
  *     {@code AL}: broadcast to all. Is followed by placeholder ID {@code 000}, or no ID at all.
  *   </li>
  * </ul>
- * <p>
- *   {@code Source} contains a prefix, followed by the ID of the sender if relevant.
- *   These are the possible prefixes:
- * </p>
+ *
+ * <p>{@code Source} contains a prefix, followed by the ID of the sender if relevant.
+ * These are the possible prefixes:
  * <ul>
  *   <li>
  *     {@code CH}: a {@link ClientHandler}. Is followed by the ID of the client handler.
@@ -45,19 +40,16 @@ import java.util.Optional;
  *     {@code SE}: the {@link Server}. Is followed by placeholder ID {@code 000}, or no ID at all.
  *   </li>
  * </ul>
- * <p>
- *   IDs are written with {@value #ID_DIGITS} digits, padded with leading zeros: client 1 is
- *   {@code CH001} and room 10 is {@code RO010}. IDs of 1000 and more are written in full. When
- *   reading a message, any number of digits is accepted, so {@code CH1}, {@code CH01} and
- *   {@code CH001} all mean client 1. Use {@link #address(String, long)} to build an address.
- * </p>
- * <p>
- *   {@code Command} is the command information for the destination device.
- *   This part of the message is specific for the device.
- * </p>
- * <p>
- *   {@code End of transmission} is the symbol {@code =}, which signifies the end of the message.
- * </p>
+ *
+ * <p>IDs are written with {@value #ID_DIGITS} digits, padded with leading zeros: client 1 is
+ * {@code CH001} and room 10 is {@code RO010}. IDs of 1000 and more are written in full. When
+ * reading a message, any number of digits is accepted, so {@code CH1}, {@code CH01} and
+ * {@code CH001} all mean client 1. Use {@link #address(String, long)} to build an address.
+ *
+ * <p>{@code Command} is the command information for the destination device.
+ * This part of the message is specific for the device.
+ *
+ * <p>{@code End of transmission} is the symbol {@code =}, which signifies the end of the message.
  */
 public class MessageWorker {
 
@@ -92,7 +84,7 @@ public class MessageWorker {
    * setter methods for {@link #destination}, {@link #source}, and {@link #command},
    * or by using the setter method for {@link #message} to set a full message immediately.
    */
-  public MessageWorker()  {
+  public MessageWorker() {
     // Empty constructor.
   }
 
@@ -137,21 +129,6 @@ public class MessageWorker {
   }
 
   /**
-   * Sets the destination part of the message to {@link #destination}.
-   *
-   * @param destination is the destination part of the message.
-   * @return this instance of {@link MessageWorker}.
-   * @throws IllegalArgumentException if {@code destination} is {@code null}.
-   */
-  public MessageWorker setDestination(String destination) {
-    if (destination == null) {
-      throw new IllegalArgumentException("Destination cannot be null.");
-    }
-    this.destination = destination;
-    return this;
-  }
-
-  /**
    * Builds an address from a prefix and an ID, with the ID padded to {@value #ID_DIGITS} digits.
    *
    * @param prefix is the prefix, {@code CH}, {@code SE}, {@code RO} or {@code AL}.
@@ -167,6 +144,21 @@ public class MessageWorker {
       throw new IllegalArgumentException("ID cannot be negative.");
     }
     return prefix + String.format("%0" + ID_DIGITS + "d", id);
+  }
+
+  /**
+   * Sets the destination part of the message to {@link #destination}.
+   *
+   * @param destination is the destination part of the message.
+   * @return this instance of {@link MessageWorker}.
+   * @throws IllegalArgumentException if {@code destination} is {@code null}.
+   */
+  public MessageWorker setDestination(String destination) {
+    if (destination == null) {
+      throw new IllegalArgumentException("Destination cannot be null.");
+    }
+    this.destination = destination;
+    return this;
   }
 
   /**

@@ -6,10 +6,10 @@ package edu.ntnu.bidata.group1.network.server;
  * <p>The server implements it to receive messages from its {@link ClientHandler}s, and every
  * device implements it to receive messages from its connection to the server.
  *
- * @param <MessageType> is the datatype of the messages being sent.
- * @param <ClientType> is the datatype of the client sending messages.
+ * @param <MessageT> is the datatype of the messages being sent.
+ * @param <ClientT> is the datatype of the client sending messages.
  */
-public interface Messenger<MessageType, ClientType> {
+public interface Messenger<MessageT, ClientT> {
 
   /**
    * Called right after a connection has been made, the first time and after every reconnect,
@@ -18,7 +18,7 @@ public interface Messenger<MessageType, ClientType> {
    *
    * @param client is the connection that was just made.
    */
-  default void onConnect(ClientType client) {
+  default void onConnect(ClientT client) {
     // Nothing to do by default.
   }
 
@@ -28,12 +28,12 @@ public interface Messenger<MessageType, ClientType> {
    * @param message is the message that arrived.
    * @param sender is the connection it arrived on.
    */
-  void onMessage(MessageType message, ClientType sender);
+  void onMessage(MessageT message, ClientT sender);
 
   /**
    * Called when a connection is lost.
    *
    * @param client is the connection that was lost.
    */
-  void onDisconnect(ClientType client);
+  void onDisconnect(ClientT client);
 }

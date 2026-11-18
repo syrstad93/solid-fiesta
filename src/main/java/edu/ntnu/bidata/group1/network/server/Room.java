@@ -86,18 +86,6 @@ public class Room {
   }
 
   /**
-   * Replaces the {@link ClientHandler} with the same ID as the given one, if this room has one.
-   * Used when a client reconnects and gets its old ID back, so the room reaches the new
-   * connection.
-   *
-   * @param handler is the new {@link ClientHandler}.
-   * @return {@code true} if a handler was replaced.
-   */
-  public boolean replaceHandler(ClientHandler handler) {
-    return this.handlers.replace(handler.getId(), handler) != null;
-  }
-
-  /**
    * Removes a {@link ClientHandler} from the map of handlers in this {@link Room} by its ID.
    *
    * @param id is the ID of the {@link ClientHandler} to remove.
@@ -109,6 +97,18 @@ public class Room {
           "ClientHandler with ID " + id + " does not exist in the room.");
     }
     this.handlers.remove(id);
+  }
+
+  /**
+   * Replaces the {@link ClientHandler} with the same ID as the given one, if this room has one.
+   * Used when a client reconnects and gets its old ID back, so the room reaches the new
+   * connection.
+   *
+   * @param handler is the new {@link ClientHandler}.
+   * @return {@code true} if a handler was replaced.
+   */
+  public boolean replaceHandler(ClientHandler handler) {
+    return this.handlers.replace(handler.getId(), handler) != null;
   }
 
   /**
@@ -161,7 +161,6 @@ public class Room {
    *
    * <p>If there are no {@link ClientHandler} objects in the room, the value is empty:
    * {@code ROOM-CLIENTS:}.
-   * </p>
    *
    * @param recipient is the {@link ClientHandler} to send the IDs to.
    * @throws IllegalArgumentException if {@code recipient} is {@code null}.

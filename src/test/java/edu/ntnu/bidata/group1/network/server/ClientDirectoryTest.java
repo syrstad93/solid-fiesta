@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for {@link ClientDirectory}.
  *
- * The tests cover parsing of {@code HELLO} values into {@link ClientDirectory.Client} records,
+ * <p>The tests cover parsing of {@code HELLO} values into {@link ClientDirectory.Client} records,
  * rejection of malformed values, acceptance of every {@link DeviceType} and {@link Role} constant,
  * and the id bookkeeping that keeps a client's id stable when it reconnects with the same name.
  * They also check how unnamed clients are reported, using their address instead of a name.
  *
- * Each test creates its own directory, so tests do not depend on each other or on test order.
+ * <p>Each test creates its own directory, so tests do not depend on each other or on test order.
  */
 class ClientDirectoryTest {
 
@@ -26,7 +26,7 @@ class ClientDirectoryTest {
    * Verifies that {@link ClientDirectory#parseHello(String)} reads the name, type and role from a
    * {@code HELLO} value.
    *
-   * A client that is not a controller, such as an actuator, is parsed with a {@code null} role.
+   * <p>A client that is not a controller, such as an actuator, is parsed with a {@code null} role.
    * A controller is parsed with the role it gives, such as {@code OWNER}.
    */
   @Test
@@ -86,12 +86,12 @@ class ClientDirectoryTest {
    * Verifies that a client introducing itself with a name not seen before keeps the id of its
    * connection.
    *
-   * The client {@code lamp}, an actuator, connects on connection id {@code 4} and sends its
+   * <p>The client {@code lamp}, an actuator, connects on connection id {@code 4} and sends its
    * {@code HELLO}. The directory must return {@code 4} as the id, report that the id is named, and
    * report {@code lamp} as its name.
    */
   @Test
-  void aNewNameKeepsTheConnectionsId() {
+  void newNameKeepsTheConnectionsId() {
     ClientDirectory directory = new ClientDirectory();
     assertEquals(4, directory.introduce(ClientDirectory.parseHello("lamp,ACTUATOR"), 4));
     assertTrue(directory.isNamed(4));
@@ -102,13 +102,13 @@ class ClientDirectoryTest {
    * Verifies that a client introducing itself with a name the directory has already seen gets its
    * old id back, not the id of its new connection.
    *
-   * The client {@code lamp}, an actuator, first connects on connection id {@code 4} and sends its
-   * {@code HELLO}. It then reconnects on connection id {@code 9} and sends the same {@code HELLO}.
-   * The directory must return {@code 4} the second time. It must also report that connection
-   * {@code 9} is not named, because the name and its client are kept under {@code 4}.
+   * <p>The client {@code lamp}, an actuator, first connects on connection id {@code 4} and sends
+   * its {@code HELLO}. It then reconnects on connection id {@code 9} and sends the same
+   * {@code HELLO}. The directory must return {@code 4} the second time. It must also report that
+   * connection {@code 9} is not named, because the name and its client are kept under {@code 4}.
    */
   @Test
-  void aKnownNameGetsItsOldIdBack() {
+  void knownNameGetsItsOldIdBack() {
     ClientDirectory directory = new ClientDirectory();
     directory.introduce(ClientDirectory.parseHello("lamp,ACTUATOR"), 4);
     assertEquals(4, directory.introduce(ClientDirectory.parseHello("lamp,ACTUATOR"), 9));
@@ -119,9 +119,9 @@ class ClientDirectoryTest {
    * Verifies that a client which has not introduced itself with a name is reported as unnamed,
    * has no {@link ClientDirectory.Client} recorded, and is shown by its address.
    *
-   * The client with id {@code 7} has never sent a {@code HELLO}. The directory must report that it
-   * is not named, return an empty {@link Optional} from {@link ClientDirectory#get(long)},
-   * and return {@code CH007} from {@link ClientDirectory#nameOf(long)}.
+   * <p>The client with id {@code 7} has never sent a {@code HELLO}. The directory must report that
+   * it is not named, return an empty {@link Optional} from {@link ClientDirectory#get(long)}, and
+   * return {@code CH007} from {@link ClientDirectory#nameOf(long)}.
    */
   @Test
   void unnamedClientsAreShownByAddress() {

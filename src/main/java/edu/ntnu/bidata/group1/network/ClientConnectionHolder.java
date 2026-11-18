@@ -41,11 +41,11 @@ import java.nio.charset.StandardCharsets;
  * and {@code onDisconnect} reconnects. This finds a connection that died without either side
  * noticing.
  *
- * @param <ClientType> is the type of the object for whom this class will hold a connection.
+ * @param <ClientT> is the type of the object for whom this class will hold a connection.
  *                    The class that uses a {@link ClientConnectionHolder} must implement
  *                    the {@link Messenger} interface.
  */
-public class ClientConnectionHolder<ClientType extends Messenger<String, ClientConnectionHolder>> {
+public class ClientConnectionHolder<ClientT extends Messenger<String, ClientConnectionHolder>> {
 
   private static final int MAX_RETRIES = 3;
   private static final long RETRY_DELAY_MS = 2000;
@@ -62,7 +62,7 @@ public class ClientConnectionHolder<ClientType extends Messenger<String, ClientC
   private final String address;
   private final int port;
 
-  private ClientType client;
+  private ClientT client;
   private volatile long lastReceived = System.currentTimeMillis();
 
   /**
@@ -75,7 +75,7 @@ public class ClientConnectionHolder<ClientType extends Messenger<String, ClientC
    * @throws InterruptedException if the thread is interrupted while waiting between connection
    *     attempts.
    */
-  public ClientConnectionHolder(ClientType client) throws IOException, InterruptedException {
+  public ClientConnectionHolder(ClientT client) throws IOException, InterruptedException {
     setClient(client);
     this.address = UniversallyAvailableInformation.LOCALHOST;
     this.port = UniversallyAvailableInformation.PORT_NUMBER;
@@ -252,7 +252,7 @@ public class ClientConnectionHolder<ClientType extends Messenger<String, ClientC
    * @param client is the client.
    * @throws IllegalArgumentException if {@code client} is {@code null}.
    */
-  private void setClient(ClientType client) {
+  private void setClient(ClientT client) {
     if (client == null) {
       throw new IllegalArgumentException("Client cannot be null.");
     }

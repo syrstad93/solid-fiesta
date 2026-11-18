@@ -98,15 +98,12 @@ public class Server implements Messenger<String, ClientHandler> {
   /**
    * Starts the server and keeps it running.
    *
-   *  <p>
-   *   Accepts new socket connections, and adds them to the {@link ExecutorService}. Also starts
-   *   the heartbeat, see {@link #HEARTBEAT_INTERVAL_MS}.
-   * </p>
-   * <p>
-   *   The server is kept running by a loop that continues as long as
-   *   the class field {@link #server} is not {@code null} and
-   *   the {@link ServerSocket} that it refers to remains open.
-   * </p>
+   * <p>Accepts new socket connections, and adds them to the {@link ExecutorService}. Also starts
+   * the heartbeat, see {@link #HEARTBEAT_INTERVAL_MS}.
+   *
+   * <p>The server is kept running by a loop that continues as long as
+   * the class field {@link #server} is not {@code null} and
+   * the {@link ServerSocket} that it refers to remains open.
    *
    * @param serverReady is a {@link CountDownLatch} that is counted down when the server is ready
    *                    to accept connections.
@@ -114,7 +111,7 @@ public class Server implements Messenger<String, ClientHandler> {
    *        that is not caused by it purposely being closed down.
    * @throws IllegalArgumentException if {@code serverReady} is {@code null}.
    */
-  public void start(CountDownLatch serverReady) throws IOException  {
+  public void start(CountDownLatch serverReady) throws IOException {
     if (serverReady == null) {
       throw new IllegalArgumentException("CountDownLatch cannot be null.");
     }

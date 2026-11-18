@@ -49,7 +49,7 @@ public class Fan extends Actuator {
         properties.put("speed", argument);
         properties.put("powerOn", true);
       }
-      default -> { }
+      default -> {}
     }
   }
 

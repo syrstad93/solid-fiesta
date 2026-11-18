@@ -48,7 +48,7 @@ class ProtocolTest {
    * additional segments separated by single hyphens, with no leading, trailing or
    * consecutive hyphens.
    *
-   * The test iterates over all protocol values and fails with a descriptive message
+   * <p>The test iterates over all protocol values and fails with a descriptive message
    * identifying the offending constant and its key if any key does not match the rule.
    */
   @Test
@@ -93,7 +93,7 @@ class ProtocolTest {
    * Verifies that {@link Protocol#error(String, String)} builds an error message that begins with
    * the {@code ERROR:} prefix followed by the rejected request key.
    *
-   * The key is separated from the description by a comma. A {@code null} key is rendered as
+   * <p>The key is separated from the description by a comma. A {@code null} key is rendered as
    * {@code ?}, so the message still has a valid structure. Characters that would break the message
    * format, such as the slash and newline in the description, are replaced with spaces.
    */
@@ -129,7 +129,7 @@ class ProtocolTest {
    * Verifies that {@link Protocol#withValue(Object)} combines a protocol's key and a value into a
    * single message string, with the key followed by a colon and then the value.
    *
-   * The test covers both a string value containing a comma and an integer value, confirming that
+   * <p>The test covers both a string value containing a comma and an integer value, confirming that
    * the value is appended unchanged after the colon regardless of its type.
    */
   @Test
@@ -141,7 +141,7 @@ class ProtocolTest {
   /**
    * Verifies that {@link Protocol#isReply()} correctly classifies protocol constants.
    *
-   * The test asserts that {@link Protocol#ERROR} and {@link Protocol#DEVICE_ADDED} are marked as
+   * <p>The test asserts that {@link Protocol#ERROR} and {@link Protocol#DEVICE_ADDED} are marked as
    * replies, while {@link Protocol#STATE} and {@link Protocol#ROOM_ADD} are not.
    */
   @Test
@@ -153,12 +153,14 @@ class ProtocolTest {
   }
 
   /**
-   * Verifies that {@link MessageWorker} splits a raw message into its command key and command value.
+   * Verifies that {@link MessageWorker} splits a raw message into its command key and command
+   * value.
    *
-   * The test parses a message whose command segment is {@code ROOM-ADDED:10,1}, where the text before
-   * the colon is the key and the text after it is the value. It asserts that the key is returned as
-   * {@code ROOM-ADDED}, that the value is returned unchanged as {@code 10,1} including the embedded
-   * comma, and that the key resolves to {@link Protocol#ROOM_ADDED} through {@link MessageWorker#getProtocol()}.
+   * <p>The test parses a message whose command segment is {@code ROOM-ADDED:10,1}, where the text
+   * before the colon is the key and the text after it is the value. It asserts that the key is
+   * returned as {@code ROOM-ADDED}, that the value is returned unchanged as {@code 10,1} including
+   * the embedded comma, and that the key resolves to {@link Protocol#ROOM_ADDED} through
+   * {@link MessageWorker#getProtocol()}.
    */
   @Test
   void messageWorkerSplitsKeyAndValue() {
@@ -188,9 +190,9 @@ class ProtocolTest {
    * Verifies that a device command embedded in a message is not treated as a protocol message.
    *
    * <p>The test parses a message whose command segment is {@code value:75}, preceded by device
-   * addressing segments ({@code CH001/CH003}) and followed by an empty {@code =} segment. It asserts
-   * that the command key is returned as {@code value}, that the command value is returned as
-   * {@code 75}, and that {@link MessageWorker#getProtocol()} returns an empty {@link Optional},
+   * addressing segments ({@code CH001/CH003}) and followed by an empty {@code =} segment. It
+   * asserts that the command key is returned as {@code value}, that the command value is returned
+   * as {@code 75}, and that {@link MessageWorker#getProtocol()} returns an empty {@link Optional},
    * since the key does not correspond to any {@link Protocol} constant.
    */
   @Test

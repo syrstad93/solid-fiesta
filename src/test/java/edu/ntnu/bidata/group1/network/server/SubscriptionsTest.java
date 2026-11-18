@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for {@link Subscriptions}.
  *
- * Each test covers one behavior of the class: keeping subscribers per device in
+ * <p>Each test covers one behavior of the class: keeping subscribers per device in
  * subscription order, ignoring duplicate subscriptions, removing a single subscription,
  * storing the latest value of each device property, and the different removal methods.
  * Those methods remove subscriptions to a device, subscriptions held by a client, the
  * stored state of a device, or everything related to a client. Each test starts with a
  * new, empty {@link Subscriptions} instance.
  *
- * The tests check that removing subscriptions to a device keeps its stored state, that
+ * <p>The tests check that removing subscriptions to a device keeps its stored state, that
  * removing a subscriber keeps the subscriptions made to it, and that removing a client
  * forgets all of its data.
  */
@@ -95,13 +95,14 @@ class SubscriptionsTest {
   }
 
   /**
-   * Verifies that the state of a device keeps only the most recent value reported for each property.
+   * Verifies that the state of a device keeps only the most recent value reported for each
+   * property.
    *
    * <p>The light reports {@code powerOn} as {@code false}, then {@code value} as {@code 0}, then
    * {@code powerOn} as {@code true}. Reporting {@code powerOn} as {@code true} again must return
-   * {@code false}, since the value did not change. The state of the light must then contain one entry
-   * per property holding its latest value, while a device that never reported any state must yield an
-   * empty map.
+   * {@code false}, since the value did not change. The state of the light must then contain one
+   * entry per property holding its latest value, while a device that never reported any state must
+   * yield an empty map.
    */
   @Test
   void stateKeepsTheLatestValuePerProperty() {
@@ -114,14 +115,15 @@ class SubscriptionsTest {
   }
 
   /**
-   * Verifies that removing all subscriptions to a device does not discard the state stored for that device.
+   * Verifies that removing all subscriptions to a device does not discard the state stored for that
+   * device.
    *
-   * <p>A client subscribes to the light, and the light then reports {@code powerOn} as {@code true}.
-   * Removing the subscriptions to the light must leave the light without any subscribers, while its
-   * stored state must still contain the reported {@code powerOn} value.
+   * <p>A client subscribes to the light, and the light then reports {@code powerOn} as
+   * {@code true}. Removing the subscriptions to the light must leave the light without any
+   * subscribers, while its stored state must still contain the reported {@code powerOn} value.
    */
   @Test
-  void removingSubscriptionsToADeviceKeepsItsState() {
+  void removingSubscriptionsToDeviceKeepsItsState() {
     subscriptions.subscribe(OWNER, LIGHT);
     subscriptions.updateState(LIGHT, "powerOn", "true");
     subscriptions.removeSubscriptionsTo(LIGHT);
@@ -130,15 +132,16 @@ class SubscriptionsTest {
   }
 
   /**
-   * Verifies that removing a client as a subscriber does not remove the subscriptions other clients hold to it.
+   * Verifies that removing a client as a subscriber does not remove the subscriptions other clients
+   * hold to it.
    *
-   * <p>The owner subscribes to the light, and the guest subscribes to the owner. The owner then reports a
-   * state value, is removed as a subscriber, and its state is cleared. The light must have no subscribers
-   * once the owner is removed, while the guest must still be subscribed to the owner. The owner's state must
-   * be empty after it is cleared.
+   * <p>The owner subscribes to the light, and the guest subscribes to the owner. The owner then
+   * reports a state value, is removed as a subscriber, and its state is cleared. The light must
+   * have no subscribers once the owner is removed, while the guest must still be subscribed to the
+   * owner. The owner's state must be empty after it is cleared.
    */
   @Test
-  void removingASubscriberKeepsTheSubscriptionsToIt() {
+  void removingSubscriberKeepsTheSubscriptionsToIt() {
     subscriptions.subscribe(OWNER, LIGHT);
     subscriptions.subscribe(GUEST, OWNER);
     subscriptions.updateState(OWNER, "type", "CONTROLLER");
@@ -152,13 +155,13 @@ class SubscriptionsTest {
   /**
    * Verifies that removing a client forgets everything about it.
    *
-   * <p>The guest subscribes to the light and to the sensor, the owner subscribes to the light and to
-   * the guest, and the guest reports a {@code type} state value. Removing the guest must leave the
-   * owner as the only subscriber of the light, leave the sensor without any subscribers, leave the guest
-   * without any subscribers, and leave the guest without any stored state.
+   * <p>The guest subscribes to the light and to the sensor, the owner subscribes to the light and
+   * to the guest, and the guest reports a {@code type} state value. Removing the guest must leave
+   * the owner as the only subscriber of the light, leave the sensor without any subscribers, leave
+   * the guest without any subscribers, and leave the guest without any stored state.
    */
   @Test
-  void removingAClientForgetsEverythingAboutIt() {
+  void removingClientForgetsEverythingAboutIt() {
     subscriptions.subscribe(OWNER, LIGHT);
     subscriptions.subscribe(GUEST, LIGHT);
     subscriptions.subscribe(GUEST, SENSOR);

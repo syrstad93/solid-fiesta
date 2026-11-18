@@ -95,7 +95,7 @@ public class ServerLogic {
       throw new IllegalArgumentException("Sender cannot be null.");
     }
 
-    switch (messageWorker.getDestinationPrefix())  {
+    switch (messageWorker.getDestinationPrefix()) {
       case "CH" -> sendToClientHandler(messageWorker);
       case "SE" -> onCommand(messageWorker, sender);
       case "RO" -> sendToRoom(messageWorker, sender);
@@ -163,7 +163,7 @@ public class ServerLogic {
       return;
     }
 
-    switch (protocol)  {
+    switch (protocol) {
       case HELLO -> hello(messageWorker, sender);
       case PING -> pingResponse(messageWorker, sender);
       case ROOM_ADD, ROOM_REMOVE, ROOM_LIST -> roomCommand(protocol, messageWorker, sender);

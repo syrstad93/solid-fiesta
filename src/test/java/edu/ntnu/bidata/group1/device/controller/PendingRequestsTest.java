@@ -23,19 +23,20 @@ class PendingRequestsTest {
    * Verifies that a server confirmation completes only the pending request whose key matches the
    * confirmation.
    *
-   * <p>Two {@code ROOM_ADD} requests are registered with keys {@code "10,1"} and {@code "10,2"}.
-   * A {@code ROOM_ADDED} message for a different key ({@code "20,1"}) and a {@code ROOM_REMOVED}
-   * message for an existing key ({@code "10,2"}) must not match either request. A {@code ROOM_ADDED}
-   * message for key {@code "10,2"} must complete the second request, leave the first request pending,
-   * and reduce the number of pending requests to one.
+   * <p>Two {@code ROOM_ADD} requests are registered with keys {@code "10,1"} and {@code "10,2"}. A
+   * {@code ROOM_ADDED} message for a different key ({@code "20,1"}) and a {@code ROOM_REMOVED}
+   * message for an existing key ({@code "10,2"}) must not match either request. A
+   * {@code ROOM_ADDED} message for key {@code "10,2"} must complete the second request, leave the
+   * first request pending, and reduce the number of pending requests to one.
    *
    * @throws Exception if retrieving the completed future fails
    */
   @Test
   void confirmationCompletesTheMatchingRequest() throws Exception {
     PendingRequests pending = new PendingRequests();
-    CompletableFuture<String> first = pending.add(Protocol.ROOM_ADD, Protocol.ROOM_ADDED, "10,1");
-    CompletableFuture<String> second =
+    final CompletableFuture<String> first =
+        pending.add(Protocol.ROOM_ADD, Protocol.ROOM_ADDED, "10,1");
+    final CompletableFuture<String> second =
         pending.add(Protocol.ROOM_ADD, Protocol.ROOM_ADDED, "10,2");
 
     assertFalse(pending.onServerMessage(Protocol.ROOM_ADDED, "20,1"));
@@ -60,7 +61,7 @@ class PendingRequestsTest {
   @Test
   void deviceAddedIsMatchedByTheDeviceIdAlone() throws Exception {
     PendingRequests pending = new PendingRequests();
-    CompletableFuture<String> request =
+    final CompletableFuture<String> request =
         pending.add(Protocol.DEVICE_ADD, Protocol.DEVICE_ADDED, "5");
 
     assertFalse(pending.onServerMessage(Protocol.DEVICE_ADDED, "7,hall-heater,ONLINE"));
@@ -84,7 +85,7 @@ class PendingRequestsTest {
   @Test
   void automationAddedIsMatchedWithoutItsNewId() throws Exception {
     PendingRequests pending = new PendingRequests();
-    CompletableFuture<String> request = pending.add(Protocol.AUTOMATION_ADD,
+    final CompletableFuture<String> request = pending.add(Protocol.AUTOMATION_ADD,
         Protocol.AUTOMATION_ADDED, "3,temperature,ABOVE,25.0,1,power:true");
 
     assertFalse(pending.onServerMessage(Protocol.AUTOMATION_ADDED,
@@ -121,17 +122,17 @@ class PendingRequestsTest {
    * <p>Two requests are registered: a {@code ROOM_ADD} request with key {@code "10,1"} and a
    * {@code DEVICE_ADD} request with key {@code "9"}. An error for an unknown key
    * ({@code "AUTOMATION-ADD"}) must not match any request and must return {@code false}. An error
-   * for the key {@code "DEVICE-ADD"} with the message {@code "Device 9 is already registered."} must
-   * match the device request, return {@code true}, and fail that request with a
-   * {@link RequestFailedException} carrying the error message. The room request must remain pending,
-   * and exactly one pending request must remain.
+   * for the key {@code "DEVICE-ADD"} with the message {@code "Device 9 is already registered."}
+   * must match the device request, return {@code true}, and fail that request with a
+   * {@link RequestFailedException} carrying the error message. The room request must remain
+   * pending, and exactly one pending request must remain.
    *
    * @throws ExecutionException if retrieving the failed future does not throw as expected
    */
   @Test
   void errorFailsTheOldestRequestWithThatKey() {
     PendingRequests pending = new PendingRequests();
-    CompletableFuture<String> roomRequest =
+    final CompletableFuture<String> roomRequest =
         pending.add(Protocol.ROOM_ADD, Protocol.ROOM_ADDED, "10,1");
     CompletableFuture<String> deviceRequest =
         pending.add(Protocol.DEVICE_ADD, Protocol.DEVICE_ADDED, "9");
@@ -162,7 +163,7 @@ class PendingRequestsTest {
   @Test
   void unansweredRequestsFailAfterTheTimeout() throws Exception {
     PendingRequests pending = new PendingRequests(100);
-    CompletableFuture<String> request =
+    final CompletableFuture<String> request =
         pending.add(Protocol.ROOM_ADD, Protocol.ROOM_ADDED, "10,1");
     ExecutionException e = assertThrows(ExecutionException.class, request::get);
     assertTrue(e.getCause() instanceof RequestFailedException);
@@ -182,9 +183,9 @@ class PendingRequestsTest {
    * @throws Exception if retrieving the completed future fails
    */
   @Test
-  void aConfirmedRequestIsNotFailedByItsTimeoutLater() throws Exception {
+  void confirmedRequestIsNotFailedByItsTimeoutLater() throws Exception {
     PendingRequests pending = new PendingRequests(100);
-    CompletableFuture<String> request =
+    final CompletableFuture<String> request =
         pending.add(Protocol.DEVICE_REMOVE, Protocol.DEVICE_REMOVED, "5");
     assertTrue(pending.onServerMessage(Protocol.DEVICE_REMOVED, "5"));
     Thread.sleep(200);

@@ -49,7 +49,7 @@ public class Heater extends Actuator {
     switch (name) {
       case POWER -> properties.put("powerOn", Boolean.parseBoolean(argument));
       case TARGET -> properties.put("targetTemperature", Double.parseDouble(argument));
-      default -> { }
+      default -> {}
     }
   }
 

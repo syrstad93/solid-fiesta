@@ -43,8 +43,9 @@ class AutomationTest {
 
   /**
    * Verifies that an automation survives a round trip through its request form. The value produced
-   * by {@link Automation#toRequestValue()} must be parsed back by {@link Automation#fromRequestValue(String)},
-   * and serializing the parsed automation again must yield the same request value.
+   * by {@link Automation#toRequestValue()} must be parsed back by
+   * {@link Automation#fromRequestValue(String)}, and serializing the parsed automation again must
+   * yield the same request value.
    */
   @Test
   void requestFormRoundTrips() {
@@ -54,11 +55,11 @@ class AutomationTest {
   }
 
   /**
-   * Verifies that an automation keeps its identifier when it is serialized to its full form and parsed
-   * back. The automation is assigned the ID {@code 7}, and its full-form value must match the expected
-   * string containing that ID. Parsing that value with {@link Automation#fromFullValue(String)} must
-   * produce an automation whose full-form value is identical to the original, and whose
-   * {@link Automation#getId()} returns {@code 7}.
+   * Verifies that an automation keeps its identifier when it is serialized to its full form and
+   * parsed back. The automation is assigned the ID {@code 7}, and its full-form value must match
+   * the expected string containing that ID. Parsing that value with
+   * {@link Automation#fromFullValue(String)} must produce an automation whose full-form value is
+   * identical to the original, and whose {@link Automation#getId()} returns {@code 7}.
    */
   @Test
   void fullFormKeepsTheId() {
@@ -70,10 +71,11 @@ class AutomationTest {
   }
 
   /**
-   * Verifies that a command value containing colon characters is parsed correctly from the request form.
-   * The input {@code "3,humidity,BELOW,30,2,mode:eco"} must yield an automation whose command is
-   * {@code "mode:eco"}, with the remaining fields parsed as the condition {@link Condition#BELOW} and a
-   * threshold of {@code 30.0}. The colons within the command must not be treated as field separators.
+   * Verifies that a command value containing colon characters is parsed correctly from the request
+   * form. The input {@code "3,humidity,BELOW,30,2,mode:eco"} must yield an automation whose command
+   * is {@code "mode:eco"}, with the remaining fields parsed as the condition
+   * {@link Condition#BELOW} and a threshold of {@code 30.0}. The colons within the command must not
+   * be treated as field separators.
    */
   @Test
   void commandMayContainColons() {
@@ -84,9 +86,9 @@ class AutomationTest {
   }
 
   /**
-   * Verifies that {@link Automation#fromRequestValue(String)} rejects malformed input by throwing an
-   * {@link IllegalArgumentException}. Rejected inputs include a non-numeric identifier, an unknown
-   * condition name, a threshold that is not a number, and a {@code null} value.
+   * Verifies that {@link Automation#fromRequestValue(String)} rejects malformed input by throwing
+   * an {@link IllegalArgumentException}. Rejected inputs include a non-numeric identifier, an
+   * unknown condition name, a threshold that is not a number, and a {@code null} value.
    */
   @Test
   void malformedValuesAreRejected() {

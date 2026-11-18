@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for {@link AutomationEngine}.
  *
- * <p> The tests cover registering automations and assigning their identifiers, edge-triggered firing
+ * <p>The tests cover registering automations and assigning their identifiers, edge-triggered firing
  * when a condition becomes true, filtering of readings by sensor and reading name, evaluating
  * automations against the latest recorded reading, and removing automations.
  */
@@ -56,7 +56,8 @@ class AutomationEngineTest {
   }
 
   /**
-   * Verifies that an automation fires exactly once when its condition transitions from false to true.
+   * Verifies that an automation fires exactly once when its condition transitions from false to
+   * true.
    *
    * <p>The test feeds a series of temperature readings to the engine and checks that the
    * automation is reported only on the reading that makes its condition become true. While the
@@ -127,12 +128,14 @@ class AutomationEngineTest {
   }
 
   /**
-   * Verifies that removing an automation stops it from being evaluated and that it cannot be removed again.
+   * Verifies that removing an automation stops it from being evaluated and that it cannot be
+   * removed again.
    *
-   * <p>The automation stored in {@code tooWarm} is removed from the engine. A subsequent temperature
-   * reading of 30 from {@code SENSOR}, which would otherwise make the automation fire, is expected to
-   * return no fired automations. Attempting to remove the same automation a second time is expected to
-   * throw an {@link IllegalArgumentException}, because no automation with its id remains registered.
+   * <p>The automation stored in {@code tooWarm} is removed from the engine. A subsequent
+   * temperature reading of 30 from {@code SENSOR}, which would otherwise make the automation fire,
+   * is expected to return no fired automations. Attempting to remove the same automation a second
+   * time is expected to throw an {@link IllegalArgumentException}, because no automation with its
+   * id remains registered.
    */
   @Test
   void removeStopsTheAutomation() {

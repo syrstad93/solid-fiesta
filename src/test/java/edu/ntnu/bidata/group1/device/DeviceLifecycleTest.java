@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests the lifecycle of simulated smart home devices and controllers.
  *
- * The tests check that creating a device only initializes its name, default properties, and
+ * <p>The tests check that creating a device only initializes its name, default properties, and
  * commands, and that connecting to the server requires an explicit call to {@code start()}. They
  * also check that a {@link TemperatureSensor} keeps readings it receives before it is started,
  * that a {@link Controller} rejects device and state requests until it is started, and that a
@@ -30,7 +30,7 @@ class DeviceLifecycleTest {
    * explicit call to {@code start()}.
    */
   @Test
-  void creatingADeviceDoesNotConnectIt() {
+  void creatingDeviceDoesNotConnectIt() {
     Light light = new Light("lifecycle-light");
     assertFalse(light.isStarted());
     assertEquals(0L, light.getValue());
@@ -46,7 +46,7 @@ class DeviceLifecycleTest {
    * {@link TemperatureSensor#READING}.
    */
   @Test
-  void aSensorStoresReadingsBeforeItIsStarted() {
+  void sensorStoresReadingsBeforeItIsStarted() {
     TemperatureSensor sensor = new TemperatureSensor("lifecycle-temperature");
     sensor.setTemperature(30);
     assertFalse(sensor.isStarted());
@@ -54,14 +54,15 @@ class DeviceLifecycleTest {
   }
 
   /**
-   * Verifies that a {@link Controller} rejects device and state requests while it is not yet started.
+   * Verifies that a {@link Controller} rejects device and state requests while it is not yet
+   * started.
    *
    * <p>This test creates a controller with the {@code OWNER} role and checks that calling
    * {@code addDevice} and {@code requestHomeState} before the controller has been started
    * throws an {@link IllegalStateException}.
    */
   @Test
-  void aControllerCannotSendRequestsBeforeItIsStarted() {
+  void controllerCannotSendRequestsBeforeItIsStarted() {
     Controller owner = new Controller("lifecycle-owner", Role.OWNER);
     assertThrows(IllegalStateException.class, () -> owner.addDevice(1));
     assertThrows(IllegalStateException.class, owner::requestHomeState);
@@ -73,7 +74,7 @@ class DeviceLifecycleTest {
    * {@link IllegalArgumentException}.
    */
   @Test
-  void aControllerNeedsARole() {
+  void controllerNeedsRole() {
     assertThrows(IllegalArgumentException.class, () -> new Controller("no-role", null));
   }
 }

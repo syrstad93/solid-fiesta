@@ -14,8 +14,8 @@ class MessageWorkerTest {
   /**
    * Verifies that {@link MessageWorker#address(String, long)} formats addresses with a
    * zero-padded numeric part of at least three digits.
-   * <p>
-   * Numbers with fewer than three digits are left-padded with zeros, numbers with exactly
+   *
+   * <p>Numbers with fewer than three digits are left-padded with zeros, numbers with exactly
    * three digits are unchanged, and numbers with more than three digits are formatted in full
    * without truncation. The predefined constants {@link MessageWorker#SERVER} and
    * {@link MessageWorker#BROADCAST} are also checked to ensure they follow the same

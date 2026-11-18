@@ -517,7 +517,6 @@ public class Controller extends Device {
     } catch (IllegalArgumentException e) {
       return;
     }
-    String key = mw.getCommandKey();
     String value = mw.getCommandValue();
     Protocol protocol = mw.getProtocol().orElse(null);
 
@@ -544,7 +543,7 @@ public class Controller extends Device {
     if (protocol != null) {
       handleDeviceProtocolMessage(device, protocol, value);
     } else {
-      handleDeviceState(device, key, value);
+      handleDeviceState(device, mw.getCommandKey(), value);
     }
   }
 

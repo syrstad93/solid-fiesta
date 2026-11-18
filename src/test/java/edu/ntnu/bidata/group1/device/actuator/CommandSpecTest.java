@@ -21,7 +21,7 @@ class CommandSpecTest {
    * accepts only whole-number values that fall within that range, inclusive of
    * both bounds.
    *
-   * Values at the lower and upper bounds, and a value surrounded by surrounding
+   * <p>Values at the lower and upper bounds, and a value surrounded by surrounding
    * whitespace, are considered valid. Values below the minimum, above the maximum,
    * containing a fractional part, non-numeric text, an empty string, or a null
    * argument are rejected.
@@ -44,7 +44,7 @@ class CommandSpecTest {
    * Verifies that a decimal {@link CommandSpec} created with the range 5.0 to 30.0
    * accepts only numeric values that fall within that range, inclusive of both bounds.
    *
-   * The values "21.5" and "5" are expected to be valid, since the first lies strictly
+   * <p>The values "21.5" and "5" are expected to be valid, since the first lies strictly
    * inside the range and the second equals the lower bound. The value "30.1", which
    * exceeds the upper bound, and the non-finite text "NaN" are expected to be rejected.
    */
@@ -59,10 +59,11 @@ class CommandSpecTest {
 
   /**
    * Verifies that a boolean {@link CommandSpec} created with {@link CommandSpec#bool(String)}
-   * accepts only the values "true" and "false", ignoring letter case, and rejects every other input.
+   * accepts only the values "true" and "false", ignoring letter case, and rejects every other
+   * input.
    *
-   * The specification is created with the name "power". The values "true" and "FALSE" are expected
-   * to be valid, while the values "yes" and "1" are expected to be rejected.
+   * <p>The specification is created with the name "power". The values "true" and "FALSE" are
+   * expected to be valid, while the values "yes" and "1" are expected to be rejected.
    */
   @Test
   void booleanAcceptsOnlyTrueOrFalse() {
@@ -77,7 +78,7 @@ class CommandSpecTest {
    * Verifies that an enumerated {@link CommandSpec} created with a fixed list of options
    * accepts only those listed options and rejects any other value.
    *
-   * The specification is created with the name "mode" and the choices "eco", "normal" and
+   * <p>The specification is created with the name "mode" and the choices "eco", "normal" and
    * "boost". The value "eco" is expected to be valid, while the value "turbo", which is not
    * among the listed choices, is expected to be rejected.
    */
@@ -92,7 +93,7 @@ class CommandSpecTest {
    * Verifies that a no-parameter {@link CommandSpec} ignores whatever argument is supplied
    * to {@link CommandSpec#isValid(String)}.
    *
-   * A command created with {@link CommandSpec#noParameter(String)} takes no arguments, so
+   * <p>A command created with {@link CommandSpec#noParameter(String)} takes no arguments, so
    * validity must not depend on the value passed in. Both a {@code null} argument and an
    * empty string are expected to be reported as valid.
    */
@@ -104,12 +105,13 @@ class CommandSpecTest {
   }
 
   /**
-   * Verifies that the {@link IllegalArgumentException} thrown by {@link CommandSpec#validate(String)}
-   * for an out-of-range value describes the problem in a human-readable way.
+   * Verifies that the {@link IllegalArgumentException} thrown by
+   * {@link CommandSpec#validate(String)} for an out-of-range value describes the problem in a
+   * human-readable way.
    *
-   * An integer {@link CommandSpec} named "value" with a range from 0 to 100 is validated against the
-   * input "150", which lies above the maximum. The exception message must state the constraint that was
-   * violated, namely that the value must be between the minimum and the maximum bounds.
+   * <p>An integer {@link CommandSpec} named "value" with a range from 0 to 100 is validated against
+   * the input "150", which lies above the maximum. The exception message must state the constraint
+   * that was violated, namely that the value must be between the minimum and the maximum bounds.
    */
   @Test
   void validateExplainsTheProblem() {
@@ -123,7 +125,7 @@ class CommandSpecTest {
    * Verifies that every supported {@link CommandSpec} type survives a round trip through its
    * message representation.
    *
-   * Each specification in the test set, covering a no-parameter command, a boolean command, an
+   * <p>Each specification in the test set, covering a no-parameter command, a boolean command, an
    * integer command with a range, a decimal command with a range, and an options command, is
    * serialized with {@link CommandSpec#toMessageValue()} and then parsed back with
    * {@link CommandSpec#fromMessageValue(String)}. The reconstructed specification must be equal to
@@ -146,10 +148,10 @@ class CommandSpecTest {
    * Verifies that {@link CommandSpec#toMessageValue()} produces the documented wire format for each
    * supported specification type.
    *
-   * An integer specification is rendered as its name, the type {@code INTEGER}, and its minimum and
-   * maximum bounds, separated by commas. A boolean specification is rendered as its name and the type
-   * {@code BOOLEAN}. An options specification is rendered as its name, the type {@code ENUM}, and its
-   * choices joined by a pipe character ("|").
+   * <p>An integer specification is rendered as its name, the type {@code INTEGER}, and its minimum
+   * and maximum bounds, separated by commas. A boolean specification is rendered as its name and
+   * the type {@code BOOLEAN}. An options specification is rendered as its name, the type
+   * {@code ENUM}, and its choices joined by a pipe character ("|").
    */
   @Test
   void messageValueLooksAsDocumented() {
@@ -164,7 +166,7 @@ class CommandSpecTest {
    * contain any of the characters used as message separators in the protocol, namely
    * the slash ("/"), the equals sign ("="), and the colon (":").
    *
-   * The check uses a decimal specification with a range from -10.0 to 30.0 and asserts
+   * <p>The check uses a decimal specification with a range from -10.0 to 30.0 and asserts
    * that its {@link CommandSpec#toMessageValue()} result is free of these reserved
    * characters, so the value can be embedded in a message without being mistaken for
    * structural delimiters.
@@ -178,13 +180,14 @@ class CommandSpecTest {
   }
 
   /**
-   * Verifies that malformed message values are rejected by {@link CommandSpec#fromMessageValue(String)}
-   * with an {@link IllegalArgumentException}.
+   * Verifies that malformed message values are rejected by
+   * {@link CommandSpec#fromMessageValue(String)} with an {@link IllegalArgumentException}.
    *
-   * A message value must consist of a name followed by a type and, where applicable, its parameters.
-   * Values that consist only of a name, values that name an unknown type such as "WHATEVER", values
-   * with an integer specification missing its range bound, values with surplus fields, and a null
-   * argument are all considered invalid and must fail with an {@link IllegalArgumentException}.
+   * <p>A message value must consist of a name followed by a type and, where applicable, its
+   * parameters. Values that consist only of a name, values that name an unknown type such as
+   * "WHATEVER", values with an integer specification missing its range bound, values with surplus
+   * fields, and a null argument are all considered invalid and must fail with an
+   * {@link IllegalArgumentException}.
    */
   @Test
   void malformedMessageValueIsRejected() {
@@ -202,7 +205,7 @@ class CommandSpecTest {
    * Verifies that invalid {@link CommandSpec} definitions are rejected with an
    * {@link IllegalArgumentException}.
    *
-   * Rejected definitions include an integer specification whose minimum is greater
+   * <p>Rejected definitions include an integer specification whose minimum is greater
    * than its maximum, boolean specifications whose names contain a path separator
    * ("/") or a colon (":"), a blank boolean name, an options specification without
    * any choices, and an options specification containing a choice with the reserved
@@ -221,9 +224,10 @@ class CommandSpecTest {
   }
 
   /**
-   * Verifies that protocol keys cannot be used as command names when creating a {@link CommandSpec}.
+   * Verifies that protocol keys cannot be used as command names when creating a
+   * {@link CommandSpec}.
    *
-   * Command names must not collide with reserved protocol keywords, regardless of letter case.
+   * <p>Command names must not collide with reserved protocol keywords, regardless of letter case.
    * Attempting to create a command specification whose name matches a protocol key, such as
    * "error" or "unsubscribe", must fail with an {@link IllegalArgumentException}. This applies
    * to each supported factory method, including boolean, no-parameter, and integer specifications.

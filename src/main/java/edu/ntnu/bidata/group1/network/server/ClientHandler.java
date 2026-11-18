@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * Handles a {@link Socket} connection to a remote client.
  * This includes input/output streams and data interchange with the client.
  */
-public class ClientHandler implements Runnable  {
+public class ClientHandler implements Runnable {
 
   private Socket socket;
   private BufferedReader in;
@@ -85,7 +85,7 @@ public class ClientHandler implements Runnable  {
    * @param message is the {@link String} message to send.
    * @throws IllegalArgumentException if {@code message} is {@code null}.
    */
-  public synchronized void sendToClient(String message)  {
+  public synchronized void sendToClient(String message) {
     // Guards.
     // Message cannot be null.
     if (message == null) {
@@ -161,8 +161,8 @@ public class ClientHandler implements Runnable  {
    * @param messenger is the interface to set.
    * @throws IllegalArgumentException if {@code messenger} is {@code null}.
    */
-  private void setMessenger(Messenger<String, ClientHandler> messenger)  {
-    if (messenger == null)  {
+  private void setMessenger(Messenger<String, ClientHandler> messenger) {
+    if (messenger == null) {
       throw new IllegalArgumentException("Messenger interface cannot be set to null.");
     }
 

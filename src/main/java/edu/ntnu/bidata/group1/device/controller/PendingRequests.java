@@ -142,7 +142,8 @@ class PendingRequests {
   }
 
   /**
-   * Returns what a reply from the server is about, so it can be matched to a request:
+   * Returns what a reply from the server is about, so it can be matched to a request.
+   *
    * <ul>
    *   <li>{@code DEVICE-ADDED:5,kitchen-light,ONLINE} is about {@code 5}: the device's name and
    *       status are not part of it.</li>

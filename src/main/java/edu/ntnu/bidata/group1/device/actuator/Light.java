@@ -17,7 +17,6 @@ public class Light extends Actuator {
   public static final String POWER = "power";
   public static final String VALUE = "value";
 
-
   /**
    * Creates a light with a random name, such as {@code light-3f9a1c2e}. See
    * {@link #Light(String)}.
@@ -46,7 +45,7 @@ public class Light extends Actuator {
     switch (name) {
       case POWER -> properties.put("powerOn", Boolean.parseBoolean(argument));
       case VALUE -> properties.put("value", Long.parseLong(argument));
-      default -> { }
+      default -> {}
     }
   }
 

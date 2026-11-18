@@ -15,11 +15,12 @@ import java.util.Optional;
 /**
  * Base class for devices that receive commands from controllers and change their state in response.
  *
- * <p>A subclass registers the commands it accepts with {@link #registerCommand(CommandSpec)}, usually
- * from its constructor, and implements {@link #executeCommand(String, String)} to carry them out.
- * Once the actuator is started, it announces its commands to all controllers. Incoming commands are
- * checked against their specifications before they reach the subclass, and any property changes
- * caused by a command are published to the server, so every subscribed controller sees them.
+ * <p>A subclass registers the commands it accepts with {@link #registerCommand(CommandSpec)},
+ * usually from its constructor, and implements {@link #executeCommand(String, String)} to carry
+ * them out. Once the actuator is started, it announces its commands to all controllers. Incoming
+ * commands are checked against their specifications before they reach the subclass, and any
+ * property changes caused by a command are published to the server, so every subscribed controller
+ * sees them.
  *
  * <p>Actuators answer requests for their command list. Protocol replies and announcements are never
  * answered, which prevents two devices from endlessly sending errors to each other.
