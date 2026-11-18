@@ -283,7 +283,7 @@ public class LinkedClients {
    * @throws IllegalArgumentException if {@code source} is {@code null}.
    * @throws IllegalArgumentException if {@code source} is not in the map.
    */
-  public int getNumberOfLinks(ClientHandler source) {
+  public int numberOfLinks(ClientHandler source) {
     if (source == null) {
       throw new IllegalArgumentException("Source client cannot be null.");
     }
@@ -299,12 +299,21 @@ public class LinkedClients {
    *
    * @return the total number of links from all source clients.
    */
-  public int getNumberOfLinks() {
+  public int numberOfLinks() {
     int total = 0;
     for (List<Link> linkList : this.links.values()) {
       total += linkList.size();
     }
     return total;
+  }
+
+  /**
+   * Returns the number of source clients in the map.
+   *
+   * @return the number of source clients in the map.
+   */
+  public int numberOfSources() {
+    return this.links.size();
   }
 
   /**

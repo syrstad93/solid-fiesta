@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
@@ -66,8 +67,8 @@ public class LinkedClientsTest {
 
     linkedClients.addSource(clientHandler);
 
-    assertEquals(0, linkedClients.getNumberOfLinks(clientHandler));
-    assertEquals(0, linkedClients.getNumberOfLinks());
+    assertEquals(0, linkedClients.numberOfLinks(clientHandler));
+    assertEquals(0, linkedClients.numberOfLinks());
   }
 
   @Test
@@ -89,7 +90,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     // Add another link for the same source
     Socket socket3 = new Socket(
@@ -100,7 +101,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler3, 20, "TEST2");
 
-    assertEquals(2, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(2, linkedClients.numberOfLinks(clientHandler1));
   }
 
   @Test
@@ -123,7 +124,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     ClientStatusMap statusMap = ClientStatusMap.getInstance();
     statusMap.put(clientHandler1, 10);
@@ -157,7 +158,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     // Add another link for the same source with a different trigger value
     Socket socket3 = new Socket(
@@ -168,7 +169,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler3, 20, "TEST2");
 
-    assertEquals(2, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(2, linkedClients.numberOfLinks(clientHandler1));
 
     ClientStatusMap statusMap = ClientStatusMap.getInstance();
     statusMap.put(clientHandler1, 10);
@@ -204,7 +205,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     ClientStatusMap statusMap = ClientStatusMap.getInstance();
     statusMap.put(clientHandler1, 10);
@@ -240,7 +241,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     ClientStatusMap statusMap = ClientStatusMap.getInstance();
     statusMap.put(clientHandler1, 10);
@@ -282,7 +283,7 @@ public class LinkedClientsTest {
 
     linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
 
-    assertEquals(1, linkedClients.getNumberOfLinks(clientHandler1));
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
 
     linkedClients.editCommand(clientHandler1, 0, "TEST_UPDATED");
     linkedClients.editTrigger(clientHandler1, 0, 20);
@@ -298,5 +299,349 @@ public class LinkedClientsTest {
     String sentMessage = clientHandler3.getLastSentMessage();
     assertEquals("CH03/CH01/TEST_UPDATED/=", sentMessage);
     assertTrue(linkedClients.linkIsTriggered(clientHandler1, 0));
+  }
+
+  @Test
+  public void removeLinkAndCheckNumberOfLinks() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+
+    Server server = Server.getInstance();
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler clientHandler1 = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler clientHandler2 = new ClientHandler(socket2, 2, server);
+
+    linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
+
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
+
+    linkedClients.removeLink(clientHandler1, 0);
+
+    assertEquals(0, linkedClients.numberOfLinks(clientHandler1));
+  }
+
+  @Test
+  public void removeSourceAndCheckNumberOfLinks() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+
+    Server server = Server.getInstance();
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler clientHandler1 = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler clientHandler2 = new ClientHandler(socket2, 2, server);
+
+    linkedClients.addLink(clientHandler1, clientHandler2, 10, "TEST");
+
+    assertEquals(1, linkedClients.numberOfLinks(clientHandler1));
+
+    linkedClients.removeSource(clientHandler1);
+
+    assertEquals(0, linkedClients.numberOfLinks());
+    assertEquals(0, linkedClients.numberOfSources());
+  }
+
+  @Test
+  void addSourceRejectsNullClient() {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addSource(null)
+    );
+  }
+
+  @Test
+  void addSourceRejectsDuplicateClient() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler client = new ClientHandler(socket, 1, server);
+
+    linkedClients.addSource(client);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addSource(client)
+    );
+  }
+
+  @Test
+  void addLinkRejectsNullSource() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket, 2, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addLink(null, destination, 10, "TEST")
+    );
+  }
+
+  @Test
+  void addLinkRejectsNullDestination() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket, 1, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addLink(source, null, 10, "TEST")
+    );
+  }
+
+  @Test
+  void addLinkRejectsNullOrBlankCommand() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket2, 2, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addLink(source, destination, 10, null)
+    );
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.addLink(source, destination, 10, "   ")
+    );
+  }
+
+  @Test
+  void editDestinationRejectsNullSource() {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editDestination(null, 0, null)
+    );
+  }
+
+  @Test
+  void editDestinationRejectsUnknownSource() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket, 1, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editDestination(source, 0, null)
+    );
+  }
+
+  @Test
+  void editDestinationRejectsOutOfBoundsIndex() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    linkedClients.addSource(source);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket2, 2, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editDestination(source, 0, destination)
+    );
+  }
+
+  @Test
+  void editDestinationRejectsNullDestination() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket2, 2, server);
+
+    linkedClients.addLink(source, destination, 10, "TEST");
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editDestination(source, 0, null)
+    );
+  }
+
+  @Test
+  void editCommandRejectsNullOrBlankCommand() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket2, 2, server);
+
+    linkedClients.addLink(source, destination, 10, "TEST");
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editCommand(source, 0, null)
+    );
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.editCommand(source, 0, " ")
+    );
+  }
+
+  @Test
+  void linkIsTriggeredRejectsUnknownSource() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket, 1, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.linkIsTriggered(source, 0)
+    );
+  }
+
+  @Test
+  void removeLinkRejectsOutOfBoundsIndex() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    linkedClients.addSource(source);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.removeLink(source, 0)
+    );
+  }
+
+  @Test
+  void removeSourceRejectsUnknownSource() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket, 1, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.removeSource(source)
+    );
+  }
+
+  @Test
+  void numberOfLinksRejectsUnknownSource() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket, 1, server);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.numberOfLinks(source)
+    );
+  }
+
+  @Test
+  void checkTriggersRejectsSourceWithoutStatus() throws IOException {
+    LinkedClients linkedClients = LinkedClients.getInstance();
+    Server server = Server.getInstance();
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler source = new ClientHandler(socket1, 1, server);
+
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    ClientHandler destination = new ClientHandler(socket2, 2, server);
+
+    linkedClients.addLink(source, destination, 10, "TEST");
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> linkedClients.checkLinkTriggersAndSendCommandIfTriggered(source)
+    );
   }
 }
