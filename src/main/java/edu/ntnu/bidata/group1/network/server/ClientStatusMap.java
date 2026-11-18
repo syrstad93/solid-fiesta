@@ -57,16 +57,12 @@ public class ClientStatusMap {
    * @param client is the {@link ClientHandler} in question.
    * @param status is the status to set.
    * @throws IllegalArgumentException if {@code client} is {@code null}.
-   * @throws IllegalArgumentException if {@code client} is already in the map.
    */
   public void put(ClientHandler client, int status) throws IllegalArgumentException {
     if (client == null) {
       throw new IllegalArgumentException("ClientHandler cannot be null.");
     }
-    if (this.statusMap.containsKey(client)) {
-      throw new IllegalArgumentException(
-          "ClientHandler with ID " + client.getId() + " already exists in the map.");
-    }
+
     this.statusMap.put(client, status);
   }
 
