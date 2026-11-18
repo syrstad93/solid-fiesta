@@ -75,6 +75,36 @@ public class ClientHandlerList {
   }
 
   /**
+   * Removes a {@link ClientHandler} from the map, but only if it is still the one registered under
+   * its ID. When a client reconnects and takes over its old ID, the old connection's handler is
+   * no longer in the map, and must not remove the new one.
+   *
+   * @param handler is the {@link ClientHandler} to remove.
+   * @return {@code true} if it was removed, {@code false} if another handler has its ID, or none.
+   * @throws IllegalArgumentException if {@code handler} is {@code null}.
+   */
+  public boolean removeIfCurrent(ClientHandler handler) {
+    if (handler == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+    return this.handlers.remove(handler.getId(), handler);
+  }
+
+  /**
+   * Puts a {@link ClientHandler} in the map under its ID, replacing any handler already there.
+   *
+   * @param handler is the {@link ClientHandler} to put in the map.
+   * @return the handler that was replaced, or {@code null} if there was none.
+   * @throws IllegalArgumentException if {@code handler} is {@code null}.
+   */
+  public ClientHandler replace(ClientHandler handler) {
+    if (handler == null) {
+      throw new IllegalArgumentException("ClientHandler cannot be null.");
+    }
+    return this.handlers.put(handler.getId(), handler);
+  }
+
+  /**
    * Removes a {@link ClientHandler} from the map by its ID.
    *
    * @param id is the ID of the {@link ClientHandler} to remove from the map.
