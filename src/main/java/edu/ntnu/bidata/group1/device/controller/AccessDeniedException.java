@@ -1,5 +1,7 @@
 package edu.ntnu.bidata.group1.device.controller;
 
+import edu.ntnu.bidata.group1.utility.Role;
+
 /**
  * Thrown when a {@link Controller} tries to do something its {@link Role} does not allow.
  */
