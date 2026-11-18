@@ -15,6 +15,7 @@ public class RoomList {
   private static volatile RoomList instance;
 
   private Map<Long, Room> rooms;
+  private long nextAvailableId = 1L;
 
   /**
    * Instantiates the class with an empty map.
@@ -54,6 +55,7 @@ public class RoomList {
       throw new IllegalArgumentException(
           "Room with ID " + room.getId() + " already exists.");
     }
+    room.setId(useNextAvailableId());
     this.rooms.put(room.getId(), room);
   }
 
@@ -131,6 +133,27 @@ public class RoomList {
    */
   public boolean containsKey(long id) {
     return this.rooms.containsKey(id);
+  }
+
+  /**
+   * Returns the number of {@link Room} objects in the list.
+   *
+   * @return the number of {@link Room} objects in the list.
+   */
+  public int size() {
+    return this.rooms.size();
+  }
+
+  /**
+   * Returns the next available ID for a new {@link Room} object,
+   * and updates the next available ID to be one higher.
+   *
+   * @return the next available ID for a new {@link Room} object.
+   */
+  private long useNextAvailableId() {
+    long idToUse = this.nextAvailableId;
+    this.nextAvailableId++;
+    return idToUse;
   }
 
   /**

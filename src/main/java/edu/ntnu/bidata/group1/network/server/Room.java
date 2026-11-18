@@ -30,11 +30,18 @@ public class Room {
   }
 
   /**
+   * Instantiates this class with default ID of 0 and an empty map of {@link ClientHandler} objects.
+   */
+  public Room() {
+    this(0L);
+  }
+
+  /**
    * Sets the ID of this {@link Room}.
    *
    * @param id is the ID to set.
    */
-  private void setId(long id) {
+  public void setId(long id) {
     this.id = id;
   }
 
