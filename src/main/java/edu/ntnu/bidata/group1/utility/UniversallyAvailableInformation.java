@@ -17,6 +17,9 @@ package edu.ntnu.bidata.group1.utility;
  */
 public abstract class UniversallyAvailableInformation {
 
+  /** The port the server listens on and clients connect to. */
   public static int PORT_NUMBER = 1238;
+
+  /** The address clients connect to: this computer. */
   public static String LOCALHOST = "127.0.0.1";
 }
