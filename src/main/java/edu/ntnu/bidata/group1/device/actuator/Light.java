@@ -44,7 +44,14 @@ public class Light extends Actuator {
   protected void executeCommand(String name, String argument) {
     switch (name) {
       case POWER -> properties.put("powerOn", Boolean.parseBoolean(argument));
-      case VALUE -> properties.put("value", Long.parseLong(argument));
+      case VALUE -> {
+        long value = Long.parseLong(argument);
+        properties.put("value", value);
+        if (value > 0) {
+          // A light that is given a brightness should be on.
+          properties.put("powerOn", true);
+        }
+      }
       default -> {}
     }
   }
