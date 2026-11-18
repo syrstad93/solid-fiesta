@@ -1,9 +1,11 @@
 package edu.ntnu.bidata.group1.network.server;
 
 import edu.ntnu.bidata.group1.utility.MessageWorker;
+import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -84,6 +86,18 @@ public class Room {
   }
 
   /**
+   * Replaces the {@link ClientHandler} with the same ID as the given one, if this room has one.
+   * Used when a client reconnects and gets its old ID back, so the room reaches the new
+   * connection.
+   *
+   * @param handler is the new {@link ClientHandler}.
+   * @return {@code true} if a handler was replaced.
+   */
+  public boolean replaceHandler(ClientHandler handler) {
+    return this.handlers.replace(handler.getId(), handler) != null;
+  }
+
+  /**
    * Removes a {@link ClientHandler} from the map of handlers in this {@link Room} by its ID.
    *
    * @param id is the ID of the {@link ClientHandler} to remove.
@@ -133,7 +147,9 @@ public class Room {
 
   /**
    * Checks if the {@link Room} is empty,
-   * i.e. if there are any {@link ClientHandler} objects in the map.
+   * that is, if there are no {@link ClientHandler} objects in the map.
+   *
+   * @return {@code true} if the room has no clients, otherwise {@code false}.
    */
   public boolean isEmpty() {
     return this.handlers.isEmpty();
@@ -141,9 +157,10 @@ public class Room {
 
   /**
    * Sends the IDs of all {@link ClientHandler} objects in this {@link Room}
-   * to the given {@link ClientHandler}. The IDs are sent as a dash-separated {@link String}.
+   * to the given {@link ClientHandler}, as {@code ROOM-CLIENTS:<id>,<id>,...}.
    *
-   * <p>If there are no {@link ClientHandler} objects in the room, the string "00" is sent instead.
+   * <p>If there are no {@link ClientHandler} objects in the room, the value is empty:
+   * {@code ROOM-CLIENTS:}.
    * </p>
    *
    * @param recipient is the {@link ClientHandler} to send the IDs to.
@@ -154,20 +171,15 @@ public class Room {
       throw new IllegalArgumentException("ClientHandler cannot be null.");
     }
 
-    StringBuilder ids = new StringBuilder();
-
-    if (!this.handlers.isEmpty()) {
-      for (Long id : getKeys()) {
-        ids.append(id).append("-");
-      }
-    } else {
-      ids.append("00");
+    StringJoiner ids = new StringJoiner(",");
+    for (Long id : getKeys()) {
+      ids.add(String.valueOf(id));
     }
 
     MessageWorker messageWorker = new MessageWorker()
         .setDestination("CH", recipient.getId())
         .setSource("RO", this.getId())
-        .setCommand(ids.toString())
+        .setCommand(Protocol.ROOM_CLIENTS.withValue(ids))
         .buildMessage();
 
     recipient.sendToClient(messageWorker.getMessage());
