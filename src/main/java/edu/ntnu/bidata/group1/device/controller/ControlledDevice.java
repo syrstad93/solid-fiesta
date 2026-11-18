@@ -1,7 +1,7 @@
 package edu.ntnu.bidata.group1.device.controller;
 
-import edu.ntnu.bidata.group1.device.DeviceType;
 import edu.ntnu.bidata.group1.device.actuator.CommandSpec;
+import edu.ntnu.bidata.group1.utility.DeviceType;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;

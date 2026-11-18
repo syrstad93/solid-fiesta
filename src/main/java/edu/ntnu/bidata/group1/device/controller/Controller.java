@@ -1,14 +1,16 @@
 package edu.ntnu.bidata.group1.device.controller;
 
 import edu.ntnu.bidata.group1.device.Device;
-import edu.ntnu.bidata.group1.device.DeviceType;
 import edu.ntnu.bidata.group1.device.actuator.CommandSpec;
 import edu.ntnu.bidata.group1.device.actuator.ParameterType;
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 import edu.ntnu.bidata.group1.utility.Automation;
 import edu.ntnu.bidata.group1.utility.Condition;
+import edu.ntnu.bidata.group1.utility.DeviceType;
 import edu.ntnu.bidata.group1.utility.MessageWorker;
+import edu.ntnu.bidata.group1.utility.Permission;
 import edu.ntnu.bidata.group1.utility.Protocol;
+import edu.ntnu.bidata.group1.utility.Role;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
