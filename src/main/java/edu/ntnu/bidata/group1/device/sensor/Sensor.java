@@ -1,8 +1,8 @@
 package edu.ntnu.bidata.group1.device.sensor;
 
 import edu.ntnu.bidata.group1.device.Device;
-import edu.ntnu.bidata.group1.device.DeviceType;
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
+import edu.ntnu.bidata.group1.utility.DeviceType;
 import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.Optional;
