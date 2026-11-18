@@ -299,6 +299,17 @@ public class LinkedClients {
   }
 
   /**
+   * Resets the instance of this class, allowing for a new instance to be created.
+   *
+   * <p>
+   *   All links and source clients are deleted.
+   * </p>
+   */
+  public void resetInstance() {
+    instance = null;
+  }
+
+  /**
    * A link set-up for a {@code source} client.
    *
    * <p>

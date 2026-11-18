@@ -34,6 +34,10 @@ public class ServerTest {
     chl.resetInstance();
     RoomList rl = RoomList.getInstance();
     rl.resetInstance();
+    ClientStatusMap csm = ClientStatusMap.getInstance();
+    csm.resetInstance();
+    LinkedClients lc = LinkedClients.getInstance();
+    lc.resetInstance();
   }
 
 

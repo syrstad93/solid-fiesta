@@ -137,4 +137,15 @@ public class ClientStatusMap {
   public boolean isEmpty() {
     return this.statusMap.isEmpty();
   }
+
+  /**
+   * Resets the instance of this class to null, allowing for a new instance to be created.
+   *
+   * <p>
+   *   All data in the map will be lost.
+   * </p>
+   */
+  public void resetInstance() {
+    instance = null;
+  }
 }
