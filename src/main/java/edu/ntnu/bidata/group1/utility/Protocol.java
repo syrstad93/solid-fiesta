@@ -34,13 +34,13 @@ import java.util.Optional;
  */
 public enum Protocol {
 
-  // ------------------------------------------------------------- requests to a device
+  // requests to a device
 
   /** {@code GET-COMMANDS} - send me your commands. */
   COMMANDS_REQUEST("GET-COMMANDS", Kind.REQUEST),
 
 
-  // ------------------------------------------------------------- replies from a device
+  // replies from a device
 
   /**
    * {@code COMMAND:<spec>} - one available command, for example
@@ -51,7 +51,7 @@ public enum Protocol {
   /** {@code COMMAND-END:<count>} - all available commands have been sent. */
   COMMAND_END("COMMAND-END", Kind.REPLY),
 
-  // ------------------------------------------------------------- reply from a device or the server
+  // reply from a device or the server
 
   /**
    * {@code ERROR:<request>,<reason>} - a message from the receiver was rejected. {@code <request>}
@@ -59,7 +59,7 @@ public enum Protocol {
    */
   ERROR("ERROR", Kind.REPLY),
 
-  // ------------------------------------------------------------- requests to the server (SE000)
+  // requests to the server (SE000)
 
   /**
    * {@code HELLO:<name>,<type>} or {@code HELLO:<name>,CONTROLLER,<role>} - the first message a
@@ -116,7 +116,7 @@ public enum Protocol {
   /** {@code AUTOMATION-LIST} - send me every automation rule. */
   AUTOMATION_LIST("AUTOMATION-LIST", Kind.REQUEST),
 
-  // ------------------------------------------------------------- requests to a room (RO<id>)
+  // requests to a room (RO<id>)
 
   /** {@code ROOM-JOIN} - the sender joins the room it is sent to. */
   JOIN_ROOM("ROOM-JOIN", Kind.REQUEST),
@@ -133,7 +133,7 @@ public enum Protocol {
    */
   ROOM_BROADCAST("ROOM-BROADCAST", Kind.REQUEST),
 
-  // ------------------------------------------------------------- replies from the server
+  // replies from the server
 
   /** {@code PONG} - answer to {@link #PING}. */
   PONG("PONG", Kind.REPLY),
