@@ -110,7 +110,12 @@ public class ServerTest {
     }
 
     // Allow some time for the server to process connections
-    Thread.sleep(1000);
+    long deadline = System.nanoTime() + 10_000_000_000L;
+
+    while (server.handlers().size() < numberOfConnections
+        && System.nanoTime() < deadline) {
+      Thread.sleep(100);
+    }
 
     // Check that the correct number of handlers were created
     assertEquals(numberOfConnections, server.handlers().size());
@@ -196,7 +201,11 @@ public class ServerTest {
     );
 
     // Allow some time for the server to process the connection
-    Thread.sleep(1000);
+    long deadline = System.nanoTime() + 10_000_000_000L;
+
+    while (server.handlers().size() < 1 && System.nanoTime() < deadline) {
+      Thread.sleep(100);
+    }
 
     // Check that the handler was created
     assertEquals(1, server.handlers().size());
@@ -205,7 +214,11 @@ public class ServerTest {
     socket.close();
 
     // Allow some time for the server to process the disconnection
-    Thread.sleep(1000);
+    deadline = System.nanoTime() + 10_000_000_000L;
+
+    while (server.handlers().size() > 0 && System.nanoTime() < deadline) {
+      Thread.sleep(100);
+    }
 
     // Check that the handler was removed
     assertEquals(0, server.handlers().size());
@@ -242,7 +255,11 @@ public class ServerTest {
     );
 
     // Allow some time for the server to process the connection
-    Thread.sleep(1000);
+    long deadline = System.nanoTime() + 10_000_000_000L;
+
+    while (server.handlers().size() < 1 && System.nanoTime() < deadline) {
+      Thread.sleep(100);
+    }
 
     // Check that the handler was created
     assertEquals(1, server.handlers().size());
