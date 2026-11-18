@@ -174,6 +174,157 @@ public class RoomTest {
   }
 
   @Test
+  public void clientIsRemovedThroughCommandMessage() throws IOException, InterruptedException {
+    Server server = Server.getInstance();
+    AtomicReference<Exception> serverException = new AtomicReference<>();
+
+    CountDownLatch serverReady = new CountDownLatch(1);
+
+    Thread startThread = new Thread(() -> {
+      try {
+        server.start(serverReady);
+      } catch (IOException e) {
+        serverException.set(e);
+      }
+    });
+
+    startThread.start();
+    serverReady.await();
+
+    Room room = new Room(1);
+    RoomList roomList = RoomList.getInstance();
+    roomList.add(room);
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+
+    ClientHandlerList handlerList = ClientHandlerList.getInstance();
+    for (int i = 0; i < 1000 && !handlerList.containsKey(1); i++) {
+      Thread.sleep(100);
+    }
+
+    ClientHandler client1 = ClientHandlerList.getInstance().get(1);
+
+    MessageWorker messageWorker = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client1.getId())
+        .setCommand("RO-ADD")
+        .buildMessage();
+
+    server.onMessage(messageWorker.getMessage(), client1);
+
+    assertTrue(room.contains(client1));
+
+    MessageWorker removeMessageWorker = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client1.getId())
+        .setCommand("RO-LEAVE")
+        .buildMessage();
+
+    server.onMessage(removeMessageWorker.getMessage(), client1);
+
+    assertFalse(room.contains(client1));
+
+    server.closeServer();
+    startThread.join();
+
+    if (serverException.get() != null) {
+      throw new RuntimeException("Server start method threw an exception", serverException.get());
+    }
+  }
+
+  @Test
+  public void testGetClientIdsCommand() throws IOException, InterruptedException {
+    Server server = Server.getInstance();
+    AtomicReference<Exception> serverException = new AtomicReference<>();
+
+    CountDownLatch serverReady = new CountDownLatch(1);
+
+    Thread startThread = new Thread(() -> {
+      try {
+        server.start(serverReady);
+      } catch (IOException e) {
+        serverException.set(e);
+      }
+    });
+
+    startThread.start();
+    serverReady.await();
+
+    Room room = new Room(1);
+    RoomList roomList = RoomList.getInstance();
+    roomList.add(room);
+
+    Socket socket1 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    Socket socket2 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+    Socket socket3 = new Socket(
+        UniversallyAvailableInformation.LOCALHOST,
+        UniversallyAvailableInformation.PORT_NUMBER
+    );
+
+    ClientHandlerList handlerList = ClientHandlerList.getInstance();
+    for (int i = 0; i < 1000 && !handlerList.containsKey(3); i++) {
+      Thread.sleep(10);
+    }
+
+    ClientHandler client1 = ClientHandlerList.getInstance().get(1);
+    ClientHandler client2 = ClientHandlerList.getInstance().get(2);
+    ClientHandler client3 = ClientHandlerList.getInstance().get(3);
+
+    MessageWorker addMessageWorker = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client1.getId())
+        .setCommand("RO-ADD")
+        .buildMessage();
+    MessageWorker addMessageWorker2 = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client2.getId())
+        .setCommand("RO-ADD")
+        .buildMessage();
+    MessageWorker addMessageWorker3 = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client3.getId())
+        .setCommand("RO-ADD")
+        .buildMessage();
+
+    server.onMessage(addMessageWorker.getMessage(), client1);
+    server.onMessage(addMessageWorker2.getMessage(), client2);
+    server.onMessage(addMessageWorker3.getMessage(), client3);
+
+    assertTrue(room.contains(client1));
+    assertTrue(room.contains(client2));
+    assertTrue(room.contains(client3));
+
+    MessageWorker getClientIdsMessageWorker = new MessageWorker()
+        .setDestination("RO", room.getId())
+        .setSource("CH", client1.getId())
+        .setCommand("RO-GET_CLIENT_IDS")
+        .buildMessage();
+
+    server.onMessage(getClientIdsMessageWorker.getMessage(), client1);
+
+    // Allow some time for the server to process the command
+    Thread.sleep(1000);
+
+    assertEquals("CH01/RO01/1-2-3-/=", client1.getLastSentMessage());
+
+    server.closeServer();
+    startThread.join();
+
+    if (serverException.get() != null) {
+      throw new RuntimeException("Server start method threw an exception", serverException.get());
+    }
+  }
+
+  @Test
   void addRejectsNullHandler() {
     Room room = new Room(1);
 

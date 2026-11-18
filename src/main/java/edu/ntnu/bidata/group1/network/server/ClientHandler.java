@@ -22,6 +22,7 @@ public class ClientHandler implements Runnable  {
   private long id;
   private String header;
   // TODO: Implement data interchange with client for requesting header information.
+  private String lastSentMessage;
 
   /**
    * Instantiates this class by setting a {@link Socket}
@@ -79,6 +80,7 @@ public class ClientHandler implements Runnable  {
     }
 
     this.out.println(message);
+    this.lastSentMessage = message;
   }
 
   /**
@@ -145,6 +147,15 @@ public class ClientHandler implements Runnable  {
    */
   public long getId() {
     return this.id;
+  }
+
+  /**
+   * Returns the last message sent to the client.
+   *
+   * @return the last message sent to the client.
+   */
+  public String getLastSentMessage() {
+    return this.lastSentMessage;
   }
 
   /**
