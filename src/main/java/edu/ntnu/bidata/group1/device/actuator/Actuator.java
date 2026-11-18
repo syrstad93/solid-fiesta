@@ -109,7 +109,7 @@ public abstract class Actuator extends Device {
   public final void announceCommands(String destination) {
     List<CommandSpec> specs = getAvailableCommands();
     for (CommandSpec spec : specs) {
-      sendMessage(destination, Protocol.COMMAND.withValue(spec.toWireFormat()));
+      sendMessage(destination, Protocol.COMMAND.withValue(spec.toMessageValue()));
     }
     sendMessage(destination, Protocol.COMMAND_END.withValue(specs.size()));
   }
