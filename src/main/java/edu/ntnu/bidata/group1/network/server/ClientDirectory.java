@@ -62,7 +62,7 @@ public class ClientDirectory {
     String name = parts[0].trim();
     String typeName = parts[1].trim();
     String roleName = parts.length == 3 ? parts[2].trim() : "";
-    if (name.isEmpty() || name.contains(":")) {
+    if (name.isEmpty() || name.chars().anyMatch(c -> "/=:,\n\r".indexOf(c) >= 0)) {
       throw new IllegalArgumentException("Client name cannot be empty or contain ':'.");
     }
 
