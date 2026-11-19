@@ -529,7 +529,8 @@ public class ServerLogic {
    */
   private void stateUpdate(MessageWorker messageWorker, ClientHandler sender) {
     String[] parts = messageWorker.getCommandValue().split(",", 2);
-    if (parts.length != 2 || parts[0].isBlank() || parts[0].contains(":")) {
+if (parts.length != 2 || parts[0].isBlank()
+        || parts[0].chars().anyMatch(c -> "/=:\n\r".indexOf(c) >= 0)) {
       throw new IllegalArgumentException(
           "State needs a property and a value, for example STATE:powerOn,true");
     }
