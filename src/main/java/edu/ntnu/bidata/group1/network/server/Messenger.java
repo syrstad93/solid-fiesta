@@ -1,25 +1,39 @@
 package edu.ntnu.bidata.group1.network.server;
 
 /**
- * Allows implementers to receive messages from clients that calls the interface.
+ * Lets a class be told about new connections, incoming messages and lost connections.
  *
- * @param <MessageType> is the datatype of the messages being sent.
- * @param <ClientType> is the datatype of the client sending messages.
+ * <p>The server implements it to receive messages from its {@link ClientHandler}s, and every
+ * device implements it to receive messages from its connection to the server.
+ *
+ * @param <MessageT> is the datatype of the messages being sent.
+ * @param <ClientT> is the datatype of the client sending messages.
  */
-public interface Messenger<MessageType, ClientType> {
+public interface Messenger<MessageT, ClientT> {
 
   /**
-   * Broadcasts the given message to all listeners.
+   * Called right after a connection has been made, the first time and after every reconnect,
+   * before anything else is sent on it. A device uses it to introduce itself with
+   * {@code HELLO}. Does nothing unless overridden.
    *
-   * @param message is the message to send.
-   * @param sender is the sender object.
+   * @param client is the connection that was just made.
    */
-  void onMessage(MessageType message, ClientType sender);
+  default void onConnect(ClientT client) {
+    // Nothing to do by default.
+  }
 
   /**
-   * Broadcasts that a client has disconnected.
+   * Called when a message arrives.
    *
-   * @param client is the client that has disconnected.
+   * @param message is the message that arrived.
+   * @param sender is the connection it arrived on.
    */
-  void onDisconnect(ClientType client);
+  void onMessage(MessageT message, ClientT sender);
+
+  /**
+   * Called when a connection is lost.
+   *
+   * @param client is the connection that was lost.
+   */
+  void onDisconnect(ClientT client);
 }
