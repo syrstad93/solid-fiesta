@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
+import edu.ntnu.bidata.group1.utility.Vault;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +35,7 @@ public class ServerTest {
     chl.resetInstance();
     RoomList rl = RoomList.getInstance();
     rl.resetInstance();
+    Vault.resetInstance();
   }
 
 

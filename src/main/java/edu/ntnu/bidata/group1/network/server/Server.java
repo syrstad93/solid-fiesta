@@ -1,6 +1,7 @@
 package edu.ntnu.bidata.group1.network.server;
 
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
+import edu.ntnu.bidata.group1.utility.Vault;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -167,13 +168,21 @@ public class Server implements Messenger<String, ClientHandler> {
 
   /**
    * Returns the next available ID.
-   * After returning, the next available ID is incremented by 1.
+   * After returning, the next available ID is incremented until it finds an available ID.
    *
    * @return the next available ID.
    */
-  private long useNextAvailableId() {
+  private synchronized long useNextAvailableId() {
+    // Checks that the next available ID is not already in use.
+    // If it is, increments the next available ID until it finds an ID that is not in use.
+    while (this.handlers.containsKey(this.nextAvailableId)) {
+      this.nextAvailableId++;
+    }
+
+    // Assigns the next available ID to the return variable.
     long nextId = this.nextAvailableId;
     this.nextAvailableId++;
+
     return nextId;
   }
 
@@ -190,6 +199,9 @@ public class Server implements Messenger<String, ClientHandler> {
    * Closes the {@link ServerSocket} and shuts down the {@link ExecutorService}.
    * After closing the server, the {@link #instance} is set to {@code null},
    * which allows for an entirely new instance to be created.
+   *
+   * <p>Internal information is not reset, so if the server is restarted,
+   * it will continue with the same clients and set-up as before.
    *
    * <p>Waits up to one second for the thread running {@link #start(CountDownLatch)} to stop.
    * While that thread is blocked waiting for a connection, Java only releases the port once the
@@ -218,6 +230,31 @@ public class Server implements Messenger<String, ClientHandler> {
     }
 
     instance = null;
+  }
+
+  /**
+   * Factory resets the {@link Server} instance,
+   * allowing for a new instance to be created.
+   *
+   * <p>This resets all internal information,
+   * so if the server is restarted,
+   * it will start with a clean slate.
+   *
+   * <p>Waits up to one second for the thread running {@link #start(CountDownLatch)} to stop.
+   * While that thread is blocked waiting for a connection, Java only releases the port once the
+   * thread has woken up, so a new server opened right away could otherwise fail with
+   * "Address already in use".
+   *
+   * @throws IOException if an I/O error occurs when closing the socket.
+   */
+  public void factoryReset() throws IOException {
+    closeServer();
+
+    ClientHandlerList chl = ClientHandlerList.getInstance();
+    chl.resetInstance();
+    RoomList rl = RoomList.getInstance();
+    rl.resetInstance();
+    Vault.resetInstance();
   }
 
   /**
