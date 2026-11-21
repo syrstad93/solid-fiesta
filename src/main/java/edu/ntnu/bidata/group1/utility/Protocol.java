@@ -82,8 +82,14 @@ public enum Protocol {
   /** {@code DEVICE-LIST} - send me every registered device. */
   DEVICE_LIST("DEVICE-LIST", Kind.REQUEST),
 
+  /** {@code ROOM-CREATE:<name>} - create an empty, named room; the server chooses its id. */
+  ROOM_CREATE("ROOM-CREATE", Kind.REQUEST),
+
   /** {@code ROOM-ADD:<roomId>,<id>} - put a registered device in a room. */
   ROOM_ADD("ROOM-ADD", Kind.REQUEST),
+
+  /** {@code ROOM-RENAME:<roomId>,<name>} - set or change the name of a room. */
+  ROOM_RENAME("ROOM-RENAME", Kind.REQUEST),
 
   /** {@code ROOM-REMOVE:<roomId>,<id>} - take a client out of a room. */
   ROOM_REMOVE("ROOM-REMOVE", Kind.REQUEST),
@@ -165,6 +171,12 @@ public enum Protocol {
 
   /** {@code DEVICE-REMOVED:<id>} - broadcast: a device was unregistered. */
   DEVICE_REMOVED("DEVICE-REMOVED", Kind.REPLY),
+
+  /** {@code ROOM-CREATED:<roomId>,<name>} - broadcast: a named room was created. */
+  ROOM_CREATED("ROOM-CREATED", Kind.REPLY),
+
+  /** {@code ROOM-RENAMED:<roomId>,<name>} - broadcast: a room was renamed. */
+  ROOM_RENAMED("ROOM-RENAMED", Kind.REPLY),
 
   /** {@code ROOM-ADDED:<roomId>,<id>} - broadcast: a client was put in a room. */
   ROOM_ADDED("ROOM-ADDED", Kind.REPLY),
