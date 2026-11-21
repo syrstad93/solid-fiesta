@@ -1,9 +1,11 @@
 package edu.ntnu.bidata.group1.network.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import edu.ntnu.bidata.group1.utility.UniversallyAvailableInformation;
+import edu.ntnu.bidata.group1.utility.Vault;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -34,6 +36,7 @@ public class ServerTest {
     chl.resetInstance();
     RoomList rl = RoomList.getInstance();
     rl.resetInstance();
+    Vault.resetInstance();
   }
 
 
@@ -51,7 +54,7 @@ public class ServerTest {
     instance1.closeServer();
     Server instance2 = Server.getInstance();
 
-    assertEquals(false, instance1 == instance2);
+    assertNotSame(instance1, instance2);
   }
 
   @Test
@@ -77,6 +80,105 @@ public class ServerTest {
     if (serverException.get() != null) {
       throw new RuntimeException("Server start method threw an exception", serverException.get());
     }
+  }
+
+  @Test
+  public void testThatCloseServerDoesntDeleteInternalState()
+      throws IOException, InterruptedException {
+    Server server = Server.getInstance();
+    AtomicReference<Exception> serverException = new AtomicReference<>();
+
+    CountDownLatch serverReady = new CountDownLatch(1);
+
+    Thread startThread = new Thread(() -> {
+      try {
+        server.start(serverReady);
+      } catch (IOException e) {
+        serverException.set(e);
+      }
+    });
+
+    startThread.start();
+    serverReady.await();
+
+    // Connect multiple sockets to the server
+    int numberOfConnections = 5;
+    for (int i = 0; i < numberOfConnections; i++) {
+      new java.net.Socket(
+          UniversallyAvailableInformation.LOCALHOST, UniversallyAvailableInformation.PORT_NUMBER
+      );
+    }
+
+    // Allow some time for the server to process connections
+    Thread.sleep(1000);
+
+    // Check that the correct number of handlers were created
+    assertEquals(numberOfConnections, server.handlers().size());
+
+    // Check that the IDs are assigned correctly
+    for (long id = 1; id <= numberOfConnections; id++) {
+      assertEquals(id, server.handlers().get(id).getId());
+    }
+    assertEquals(6, server.peekNextAvailableId());
+
+    server.closeServer();
+    startThread.join();
+
+    if (serverException.get() != null) {
+      throw new RuntimeException("Server start method threw an exception", serverException.get());
+    }
+
+    Server newServerInstance = Server.getInstance();
+    assertEquals(numberOfConnections, newServerInstance.handlers().size());
+  }
+
+  @Test
+  public void testThatFactoryResetMethodResetsInternalState() throws IOException, InterruptedException {
+    Server server = Server.getInstance();
+    AtomicReference<Exception> serverException = new AtomicReference<>();
+
+    CountDownLatch serverReady = new CountDownLatch(1);
+
+    Thread startThread = new Thread(() -> {
+      try {
+        server.start(serverReady);
+      } catch (IOException e) {
+        serverException.set(e);
+      }
+    });
+
+    startThread.start();
+    serverReady.await();
+
+    // Connect multiple sockets to the server
+    int numberOfConnections = 5;
+    for (int i = 0; i < numberOfConnections; i++) {
+      new java.net.Socket(
+          UniversallyAvailableInformation.LOCALHOST, UniversallyAvailableInformation.PORT_NUMBER
+      );
+    }
+
+    // Allow some time for the server to process connections
+    Thread.sleep(1000);
+
+    // Check that the correct number of handlers were created
+    assertEquals(numberOfConnections, server.handlers().size());
+
+    // Check that the IDs are assigned correctly
+    for (long id = 1; id <= numberOfConnections; id++) {
+      assertEquals(id, server.handlers().get(id).getId());
+    }
+    assertEquals(6, server.peekNextAvailableId());
+
+    server.factoryReset();
+    startThread.join();
+
+    if (serverException.get() != null) {
+      throw new RuntimeException("Server start method threw an exception", serverException.get());
+    }
+
+    Server newServerInstance = Server.getInstance();
+    assertEquals(0, newServerInstance.handlers().size());
   }
 
   @Test
@@ -150,14 +252,14 @@ public class ServerTest {
 
     // Send a ping message to the server
     java.io.PrintWriter out = new java.io.PrintWriter(socket.getOutputStream(), true);
-    out.println("SE00/0000/PING/=");
+    out.println("SE000/00000/PING/=");
 
     // Read the response from the server
     java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(socket.getInputStream()));
     String response = in.readLine();
 
     // Check that the response is "pong"
-    assertEquals("CH01/SE00/PONG/=", response);
+    assertEquals("CH001/SE000/PONG/=", response);
 
     socket.close();
     server.closeServer();

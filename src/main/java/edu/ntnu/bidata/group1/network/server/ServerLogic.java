@@ -3,6 +3,7 @@ package edu.ntnu.bidata.group1.network.server;
 import edu.ntnu.bidata.group1.utility.Automation;
 import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.Protocol;
+import edu.ntnu.bidata.group1.utility.Vault;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,10 +18,12 @@ public class ServerLogic {
   private Server server;
   private ClientHandlerList handlers;
   private RoomList rooms;
-  private final Set<Long> registeredDevices = new LinkedHashSet<>();
-  private final AutomationEngine automations = new AutomationEngine();
-  private final Subscriptions subscriptions = new Subscriptions();
-  private final ClientDirectory clients = new ClientDirectory();
+  private Set<Long> registeredDevices = new LinkedHashSet<>();
+  private AutomationEngine automations = new AutomationEngine();
+  private Subscriptions subscriptions = new Subscriptions();
+  private ClientDirectory clients = new ClientDirectory();
+
+  private Vault vault;
 
   /**
    * Instantiates this class.
@@ -34,6 +37,33 @@ public class ServerLogic {
     setServer(server);
     this.handlers = ClientHandlerList.getInstance();
     this.rooms = RoomList.getInstance();
+
+    this.vault = Vault.getInstance();
+  }
+
+  /**
+   * Sets the {@link AutomationEngine}, {@link ClientDirectory}, and {@link Subscriptions} instances
+   * in the {@link Vault} singleton, if the vault contains them.
+   * If the vault does not contain them, it sets the vault's instances to the ones in this class.
+   */
+  public void setVaultInstances() {
+    if (this.vault.hasAutomationEngine()) {
+      this.automations = this.vault.getAutomationEngine();
+    } else {
+      this.vault.setAutomationEngine(this.automations);
+    }
+
+    if (this.vault.hasClientDirectory()) {
+      this.clients = this.vault.getClientDirectory();
+    } else {
+      this.vault.setClientDirectory(this.clients);
+    }
+
+    if (this.vault.hasSubscriptions()) {
+      this.subscriptions = this.vault.getSubscriptions();
+    } else {
+      this.vault.setSubscriptions(this.subscriptions);
+    }
   }
 
   /**
