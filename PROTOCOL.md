@@ -287,16 +287,18 @@ Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<
 | `DEVICE_ADD` | `DEVICE-ADD:<id>` | request | Registers connected client `<id>` as a device in the home. Fails if the client is not connected, is already registered, or is the sender itself. | `DEVICE-ADDED:<id>,<name>,ONLINE` to **everyone** |
 | `DEVICE_REMOVE` | `DEVICE-REMOVE:<id>` | request | Unregisters the device, takes it out of every room, removes every subscription to it, and removes every automation that uses it. | `ROOM-REMOVED:<room>,<id>` for each room, `AUTOMATION-REMOVED:<id>` for each automation, then `DEVICE-REMOVED:<id>`, to **everyone** |
 | `DEVICE_LIST` | `DEVICE-LIST` | request | - | One `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>` per registered device, to the sender |
-| `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room if needed. | `ROOM-ADDED:<room>,<id>` to **everyone** |
-| `ROOM_REMOVE` | `ROOM-REMOVE:<room>,<id>` | request | Takes client `<id>` out of the room. A room that becomes empty is deleted. | `ROOM-REMOVED:<room>,<id>` to **everyone** |
-| `ROOM_LIST` | `ROOM-LIST` | request | - | One `ROOM-ADDED:<room>,<id>` per client in each room, to the sender |
+| `ROOM_CREATE` | `ROOM-CREATE:<name>` | request | Creates an empty room called `<name>`. The **server chooses the room's id**. The name is trimmed and must not be blank or contain `/`, `=` or line breaks. | `ROOM-CREATED:<room>,<name>` to **everyone** |
+| `ROOM_RENAME` | `ROOM-RENAME:<room>,<name>` | request | Sets or changes the name of an existing room. Everything after the first comma is the name, with the same rules as `ROOM-CREATE`. | `ROOM-RENAMED:<room>,<name>` to **everyone** |
+| `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room (without a name) if needed. | `ROOM-ADDED:<room>,<id>` to **everyone** |
+| `ROOM_REMOVE` | `ROOM-REMOVE:<room>,<id>` | request | Takes client `<id>` out of the room. A room that becomes empty is deleted, unless it has a name. | `ROOM-REMOVED:<room>,<id>` to **everyone** |
+| `ROOM_LIST` | `ROOM-LIST` | request | - | One `ROOM-CREATED:<room>,<name>` per named room, then one `ROOM-ADDED:<room>,<id>` per client in each room, to the sender |
 | `AUTOMATION_ADD` | `AUTOMATION-ADD:<sensor>,<reading>,<ABOVE\|BELOW>,<threshold>,<device>,<command>` | request | Adds an automation (section 12). Both the sensor and the device must be registered. | `AUTOMATION-ADDED:<id>,…` to **everyone** |
 | `AUTOMATION_REMOVE` | `AUTOMATION-REMOVE:<id>` | request | Removes an automation. | `AUTOMATION-REMOVED:<id>` to **everyone** |
 | `AUTOMATION_LIST` | `AUTOMATION-LIST` | request | - | One `AUTOMATION-ADDED:<id>,…` per automation, to the sender |
 
 ## 11. Messages to a room
 
-Sent to `RO<id>`. The room must already exist (create it with `ROOM-ADD`), otherwise the server answers with an error.
+Sent to `RO<id>`. The room must already exist (create it with `ROOM-CREATE` or `ROOM-ADD`), otherwise the server answers with an error.
 
 | Constant | Format | Kind | What happens | Answer |
 |---|---|---|---|---|
@@ -369,6 +371,8 @@ These are all replies, so a receiver never answers them. The one exception is `P
 | `DEVICE_ONLINE` | `DEVICE-ONLINE:<id>` | everyone | A registered device connected again. |
 | `DEVICE_OFFLINE` | `DEVICE-OFFLINE:<id>` | everyone | A registered device lost its connection. It stays registered. |
 | `DEVICE_REMOVED` | `DEVICE-REMOVED:<id>` | everyone | Device `<id>` was unregistered. |
+| `ROOM_CREATED` | `ROOM-CREATED:<room>,<name>` | everyone, or the sender after `ROOM-LIST` | Room `<room>` exists and is called `<name>`. |
+| `ROOM_RENAMED` | `ROOM-RENAMED:<room>,<name>` | everyone | Room `<room>` is now called `<name>`. |
 | `ROOM_ADDED` | `ROOM-ADDED:<room>,<id>` | everyone, or the sender after `ROOM-LIST` | Client `<id>` is in room `<room>`. |
 | `ROOM_REMOVED` | `ROOM-REMOVED:<room>,<id>` | everyone | Client `<id>` left room `<room>`. |
 | `ROOM_CLIENTS` | `ROOM-CLIENTS:<id>,<id>,…` | sender | The clients in a room; the value is empty for an empty room. Comes from `RO<room>`. |
@@ -407,7 +411,7 @@ A `Controller` gets a `Role` when it is created. The role cannot be changed afte
 |---|---|:-:|:-:|:-:|
 | See devices, their commands and state, rooms and automations | `DEVICE-LIST`, `ROOM-LIST`, `AUTOMATION-LIST`, `GET-COMMANDS`, `SUBSCRIBE`, `UNSUBSCRIBE` | ✓ | ✓ | ✓ |
 | Control devices | device commands such as `power:true` | ✓ | ✓ | ✓ |
-| Put devices in rooms and take them out | `ROOM-ADD`, `ROOM-REMOVE` | | ✓ | ✓ |
+| Create and rename rooms, put devices in rooms and take them out | `ROOM-CREATE`, `ROOM-RENAME`, `ROOM-ADD`, `ROOM-REMOVE` | | ✓ | ✓ |
 | Add and remove automations | `AUTOMATION-ADD`, `AUTOMATION-REMOVE` | | ✓ | ✓ |
 | Add and remove devices | `DEVICE-ADD`, `DEVICE-REMOVE` | | | ✓ |
 
@@ -495,5 +499,6 @@ server → 5   CH005/CH001/powerOn:true/=             (and to the other subscrib
 - **Names are only remembered while the server runs.** After a server restart, devices get new ids and must be added again.
 - **Roles are not enforced by the server.** A client that does not use the `Controller` class can send `DEVICE-ADD` or `ROOM-ADD` directly. The server knows each controller's role from `HELLO`, but that role is whatever the client claims, so enforcing it would also need a way to prove it, for example a login step.
 - **Automations, rooms and registered devices live in the server's memory.** They are lost when the server restarts.
-- **`ROOM-JOIN` cannot create a room.** A client can only join a room that already exists; rooms are created with `ROOM-ADD`.
+- **`ROOM-JOIN` cannot create a room.** A client can only join a room that already exists; rooms are created with `ROOM-CREATE` or `ROOM-ADD`.
+- **Named rooms are never deleted automatically.** There is no `ROOM-DELETE` yet, so a room created with `ROOM-CREATE` stays until the server restarts.
 - **New messages follow the [naming rule](#naming-rule).** `ProtocolTest` fails if a key in `Protocol` breaks it.
