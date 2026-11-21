@@ -1,5 +1,15 @@
 package edu.ntnu.bidata.group1.device.controller;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
 import edu.ntnu.bidata.group1.device.Device;
 import edu.ntnu.bidata.group1.device.actuator.CommandSpec;
 import edu.ntnu.bidata.group1.device.actuator.ParameterType;
@@ -11,15 +21,6 @@ import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.Permission;
 import edu.ntnu.bidata.group1.utility.Protocol;
 import edu.ntnu.bidata.group1.utility.Role;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A device that controls other devices by sending them messages through the server.

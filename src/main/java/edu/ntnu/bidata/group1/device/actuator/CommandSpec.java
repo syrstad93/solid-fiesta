@@ -1,10 +1,11 @@
 package edu.ntnu.bidata.group1.device.actuator;
 
-import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+
+import edu.ntnu.bidata.group1.utility.Protocol;
 
 /**
  * Describes one command an actuator accepts: its name, the type of its parameter, and the range
