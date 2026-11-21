@@ -1,10 +1,11 @@
 package edu.ntnu.bidata.group1.device.controller;
 
-import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import edu.ntnu.bidata.group1.utility.Protocol;
 
 /**
  * The requests a {@link Controller} has sent to the server and is still waiting for an answer

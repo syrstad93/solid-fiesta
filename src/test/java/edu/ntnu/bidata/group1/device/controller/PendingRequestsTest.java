@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import edu.ntnu.bidata.group1.device.controller.PendingRequests;
+import edu.ntnu.bidata.group1.device.controller.RequestFailedException;
 import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;

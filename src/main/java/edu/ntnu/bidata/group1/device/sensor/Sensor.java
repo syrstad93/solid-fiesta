@@ -1,11 +1,12 @@
 package edu.ntnu.bidata.group1.device.sensor;
 
+import java.util.Optional;
+
 import edu.ntnu.bidata.group1.device.Device;
 import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
 import edu.ntnu.bidata.group1.utility.DeviceType;
 import edu.ntnu.bidata.group1.utility.MessageWorker;
 import edu.ntnu.bidata.group1.utility.Protocol;
-import java.util.Optional;
 
 /**
  * Base class for devices that measure something: temperature, humidity, light level and so on.

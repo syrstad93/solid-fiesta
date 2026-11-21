@@ -1,16 +1,17 @@
 package edu.ntnu.bidata.group1.device.actuator;
 
-import edu.ntnu.bidata.group1.device.Device;
-import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
-import edu.ntnu.bidata.group1.utility.DeviceType;
-import edu.ntnu.bidata.group1.utility.MessageWorker;
-import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import edu.ntnu.bidata.group1.device.Device;
+import edu.ntnu.bidata.group1.network.ClientConnectionHolder;
+import edu.ntnu.bidata.group1.utility.DeviceType;
+import edu.ntnu.bidata.group1.utility.MessageWorker;
+import edu.ntnu.bidata.group1.utility.Protocol;
 
 /**
  * Base class for devices that receive commands from controllers and change their state in response.

@@ -1,11 +1,12 @@
 package edu.ntnu.bidata.group1.device.controller;
 
-import edu.ntnu.bidata.group1.device.actuator.CommandSpec;
-import edu.ntnu.bidata.group1.utility.DeviceType;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+
+import edu.ntnu.bidata.group1.device.actuator.CommandSpec;
+import edu.ntnu.bidata.group1.utility.DeviceType;
 
 /**
  * A controller's record of one registered device: the device's id, name and type, whether it
