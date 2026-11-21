@@ -196,7 +196,8 @@ public class ServerLogic {
     switch (protocol) {
       case HELLO -> hello(messageWorker, sender);
       case PING -> pingResponse(messageWorker, sender);
-      case ROOM_ADD, ROOM_REMOVE, ROOM_LIST -> roomCommand(protocol, messageWorker, sender);
+      case ROOM_CREATE, ROOM_RENAME, ROOM_ADD, ROOM_REMOVE, ROOM_LIST ->
+          roomCommand(protocol, messageWorker, sender);
       case DEVICE_ADD, DEVICE_REMOVE, DEVICE_LIST -> deviceCommand(protocol, messageWorker, sender);
       case STATE -> stateUpdate(messageWorker, sender);
       case SUBSCRIBE, UNSUBSCRIBE -> subscriptionCommand(protocol, messageWorker, sender);
@@ -212,14 +213,19 @@ public class ServerLogic {
    * Handles room management commands sent to the server.
    *
    * <ul>
-   *   <li>{@code ROOM-ADD:<roomId>,<clientId>} puts a client in a room. The room is created if
-   *       it does not exist. On success, {@code ROOM-ADDED:<roomId>,<clientId>} is broadcast to
-   *       all clients.</li>
+   *   <li>{@code ROOM-CREATE:<name>} creates an empty, named room. The server chooses the room's
+   *       id. On success, {@code ROOM-CREATED:<roomId>,<name>} is broadcast to all clients.</li>
+   *   <li>{@code ROOM-RENAME:<roomId>,<name>} sets or changes the name of an existing room. On
+   *       success, {@code ROOM-RENAMED:<roomId>,<name>} is broadcast to all clients.</li>
+   *   <li>{@code ROOM-ADD:<roomId>,<clientId>} puts a client in a room. The room is created,
+   *       without a name, if it does not exist. On success,
+   *       {@code ROOM-ADDED:<roomId>,<clientId>} is broadcast to all clients.</li>
    *   <li>{@code ROOM-REMOVE:<roomId>,<clientId>} takes a client out of a room. A room that
-   *       becomes empty is deleted. On success, {@code ROOM-REMOVED:<roomId>,<clientId>} is
-   *       broadcast to all clients.</li>
-   *   <li>{@code ROOM-LIST} sends the sender one {@code ROOM-ADDED:<roomId>,<clientId>} message
-   *       for every client in every room.</li>
+   *       becomes empty is deleted unless it has a name. On success,
+   *       {@code ROOM-REMOVED:<roomId>,<clientId>} is broadcast to all clients.</li>
+   *   <li>{@code ROOM-LIST} sends the sender one {@code ROOM-CREATED:<roomId>,<name>} message
+   *       for every named room, then one {@code ROOM-ADDED:<roomId>,<clientId>} message for every
+   *       client in every room.</li>
    * </ul>
    *
    * <p>Which clients are allowed to manage rooms is decided by the controllers' roles; the
@@ -233,13 +239,21 @@ public class ServerLogic {
    */
   private void roomCommand(Protocol protocol, MessageWorker messageWorker,
       ClientHandler sender) {
-    if (protocol == Protocol.ROOM_LIST) {
-      for (Room room : this.rooms.getValues()) {
-        for (Long clientId : room.getKeys()) {
-          sendFromServer(sender, Protocol.ROOM_ADDED.withValue(room.getId() + "," + clientId));
-        }
+    switch (protocol) {
+      case ROOM_LIST -> {
+        listRooms(sender);
+        return;
       }
-      return;
+      case ROOM_CREATE -> {
+        createRoom(messageWorker.getCommandValue());
+        return;
+      }
+      case ROOM_RENAME -> {
+        renameRoom(messageWorker.getCommandValue());
+        return;
+      }
+      default -> {
+      }
     }
 
     String[] ids = messageWorker.getCommandValue().split(",");
@@ -277,7 +291,7 @@ public class ServerLogic {
         synchronized (this.rooms) {
           Room room = this.rooms.get(roomId);
           room.remove(clientId);
-          if (room.isEmpty()) {
+          if (room.shouldBeDeleted()) {
             this.rooms.remove(roomId);
           }
         }
@@ -285,6 +299,73 @@ public class ServerLogic {
       }
       default -> throw new IllegalArgumentException("Not a room command: " + protocol.getKey());
     }
+  }
+
+  /**
+   * Sends the sender every room: {@code ROOM-CREATED:<roomId>,<name>} for each named room, then
+   * {@code ROOM-ADDED:<roomId>,<clientId>} for each client in each room.
+   *
+   * @param sender is the client that asked.
+   */
+  private void listRooms(ClientHandler sender) {
+    List<Room> all;
+    synchronized (this.rooms) {
+      all = new ArrayList<>(this.rooms.getValues());
+    }
+    for (Room room : all) {
+      if (room.hasName()) {
+        sendFromServer(sender,
+            Protocol.ROOM_CREATED.withValue(room.getId() + "," + room.getName()));
+      }
+    }
+    for (Room room : all) {
+      for (Long clientId : room.getKeys()) {
+        sendFromServer(sender, Protocol.ROOM_ADDED.withValue(room.getId() + "," + clientId));
+      }
+    }
+  }
+
+  /**
+   * Handles {@code ROOM-CREATE:<name>}: creates an empty room with an id chosen by the server,
+   * and broadcasts {@code ROOM-CREATED:<roomId>,<name>}.
+   *
+   * @param value is the requested name.
+   * @throws IllegalArgumentException if the name is not valid.
+   */
+  private void createRoom(String value) {
+    Room room;
+    synchronized (this.rooms) {
+      room = this.rooms.create(value);
+    }
+    broadcastFromServer(Protocol.ROOM_CREATED.withValue(room.getId() + "," + room.getName()));
+  }
+
+  /**
+   * Handles {@code ROOM-RENAME:<roomId>,<name>}: sets the name of an existing room, and broadcasts
+   * {@code ROOM-RENAMED:<roomId>,<name>}. Everything after the first comma is the name.
+   *
+   * @param value is the room id and the new name.
+   * @throws IllegalArgumentException if the command is malformed, the room does not exist, or
+   *        the name is not valid.
+   */
+  private void renameRoom(String value) {
+    String[] parts = value.split(",", 2);
+    if (parts.length != 2) {
+      throw new IllegalArgumentException(
+          "Room name command needs a room id and a name, for example ROOM-RENAME:1,Kitchen");
+    }
+    long roomId;
+    try {
+      roomId = Long.parseLong(parts[0].trim());
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("Room id must be a number.");
+    }
+    Room room;
+    synchronized (this.rooms) {
+      room = this.rooms.get(roomId);
+      room.setName(parts[1]);
+    }
+    broadcastFromServer(Protocol.ROOM_RENAMED.withValue(room.getId() + "," + room.getName()));
   }
 
   /**
@@ -515,7 +596,7 @@ public class ServerLogic {
         if (room.getKeys().contains(clientId)) {
           room.remove(clientId);
           leftRoomIds.add(room.getId());
-          if (room.isEmpty()) {
+          if (room.shouldBeDeleted()) {
             emptiedRoomIds.add(room.getId());
           }
         }

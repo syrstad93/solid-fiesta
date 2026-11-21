@@ -149,7 +149,8 @@ class PendingRequests {
    *   <li>{@code DEVICE-ADDED:5,kitchen-light,ONLINE} is about {@code 5}: the device's name and
    *       status are not part of it.</li>
    *   <li>{@code AUTOMATION-ADDED:7,3,temperature,...} is about {@code 3,temperature,...}: the
-   *       request did not know the id 7 the server would give the automation.</li>
+   *       request did not know the id 7 the server would give the automation. Likewise,
+   *       {@code ROOM-CREATED:4,Kitchen} is about {@code Kitchen}.</li>
    *   <li>Every other reply is about its whole value, for example {@code ROOM-ADDED:10,5} is
    *       about {@code 10,5}, and {@code DEVICE-REMOVED:5} about {@code 5}.</li>
    * </ul>
@@ -163,7 +164,7 @@ class PendingRequests {
     if (reply == Protocol.DEVICE_ADDED && comma >= 0) {
       return value.substring(0, comma);
     }
-    if (reply == Protocol.AUTOMATION_ADDED && comma >= 0) {
+    if ((reply == Protocol.AUTOMATION_ADDED || reply == Protocol.ROOM_CREATED) && comma >= 0) {
       return value.substring(comma + 1);
     }
     return value;

@@ -10,25 +10,41 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A collection of {@link ClientHandler} objects.
- * A Room has a unique ID
+ * A Room has a unique ID, an optional name,
  * and a {@link Map} containing all {@link ClientHandler} objects in the room.
  * The map is a {@link ConcurrentHashMap} to ensure thread safety.
  */
 public class Room {
 
+  private volatile String name;
   private long id;
   private Map<Long, ClientHandler> handlers;
   private RoomLogic logic;
 
   /**
-   * Instantiates this class by setting an ID and an empty map of {@link ClientHandler} objects.
+   * Instantiates a room without a name. Used when a room is created implicitly by
+   * {@code ROOM-ADD}; such a room is deleted again when it becomes empty.
    *
    * @param id is the ID of this {@link Room}.
    */
   public Room(long id) {
     setId(id);
+    this.name = "";
     this.handlers = new ConcurrentHashMap<>();
     this.logic = new RoomLogic(this);
+  }
+
+
+  /**
+   * Instantiates a named room. A named room is kept when it becomes empty.
+   *
+   * @param id is the ID of this {@link Room}, given by the server.
+   * @param name is the name of this {@link Room}.
+   * @throws IllegalArgumentException if the name is not valid, see {@link #validateName(String)}.
+   */
+  public Room(long id, String name) {
+    setId(id);
+    setName(name);
   }
 
   /**
@@ -38,6 +54,65 @@ public class Room {
    */
   private void setId(long id) {
     this.id = id;
+  }
+
+  /**
+   * Checks a room name and returns it without surrounding whitespace. A name must not be blank
+   * and must not contain {@code /}, {@code =} or line breaks, since those are used to frame
+   * messages.
+   *
+   * @param name is the name to check.
+   * @return the trimmed name.
+   * @throws IllegalArgumentException if the name is not valid.
+   */
+  public static String validateName(String name) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Room name cannot be empty.");
+    }
+    String trimmed = name.trim();
+    if (trimmed.chars().anyMatch(c -> "/=\n\r".indexOf(c) >= 0)) {
+      throw new IllegalArgumentException(
+          "Room name cannot contain '/', '=' or line breaks.");
+    }
+    return trimmed;
+  }
+
+  /**
+   * Sets (or changes) the name of this {@link Room}.
+   *
+   * @param name is the new name; it is trimmed.
+   * @throws IllegalArgumentException if the name is not valid, see {@link #validateName(String)}.
+   */
+  public void setName(String name) {
+    this.name = validateName(name);
+  }
+
+  /**
+   * Returns the name of this {@link Room}, or an empty string if it has none.
+   *
+   * @return the name of this {@link Room}.
+   */
+  public String getName() {
+    return this.name;
+  }
+
+  /**
+   * Returns whether this room has a name. Named rooms are kept when they become empty; rooms
+   * without a name are deleted.
+   *
+   * @return {@code true} if the room has a name.
+   */
+  public boolean hasName() {
+    return !this.name.isEmpty();
+  }
+
+  /**
+   * Returns whether this room should be deleted: it is empty and has no name.
+   *
+   * @return {@code true} if the room should be deleted.
+   */
+  public boolean shouldBeDeleted() {
+    return isEmpty() && !hasName();
   }
 
   /**

@@ -104,7 +104,8 @@ class PendingRequestsTest {
    *
    * <p>For a {@code DEVICE_ADDED} message, only the leading device id is returned. For an
    * {@code AUTOMATION_ADDED} message, the leading automation id assigned by the server is
-   * dropped and the remaining definition fields are returned unchanged. For a {@code ROOM_ADDED}
+   * dropped and the remaining definition fields are returned unchanged, and likewise the room id is
+   * dropped from a {@code ROOM_CREATED} message. For a {@code ROOM_ADDED}
    * message, the full value is returned when it consists of the room id and the device id. For a
    * {@code DEVICE_REMOVED} message whose value is only the device id, that id is returned as is.
    */
@@ -115,6 +116,25 @@ class PendingRequestsTest {
         Protocol.AUTOMATION_ADDED, "7,3,temperature,ABOVE,25.0,1,power:true"));
     assertEquals("10,5", PendingRequests.aboutOf(Protocol.ROOM_ADDED, "10,5"));
     assertEquals("5", PendingRequests.aboutOf(Protocol.DEVICE_REMOVED, "5"));
+    assertEquals("Kitchen", PendingRequests.aboutOf(Protocol.ROOM_CREATED, "4,Kitchen"));
+    assertEquals("4,Kitchen", PendingRequests.aboutOf(Protocol.ROOM_RENAMED, "4,Kitchen"));
+  }
+
+  /**
+   * Verifies that a {@code ROOM-CREATE} request, which does not know the id the server will give
+   * the room, is completed by the {@code ROOM-CREATED} reply with the same name, and not by one
+   * for another name.
+   */
+  @Test
+  void roomCreatedCompletesTheRequestWithTheSameName() throws Exception {
+    PendingRequests pending = new PendingRequests();
+    CompletableFuture<String> request =
+        pending.add(Protocol.ROOM_CREATE, Protocol.ROOM_CREATED, "Kitchen");
+
+    assertFalse(pending.onServerMessage(Protocol.ROOM_CREATED, "3,Bedroom"));
+    assertTrue(pending.onServerMessage(Protocol.ROOM_CREATED, "4,Kitchen"));
+    assertEquals("4,Kitchen", request.get());
+    assertEquals(0, pending.size());
   }
 
   /**

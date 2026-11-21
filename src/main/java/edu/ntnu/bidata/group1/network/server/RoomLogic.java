@@ -41,7 +41,8 @@ public class RoomLogic {
    *   <li>{@link Protocol#JOIN_ROOM} ({@code ROOM-JOIN}): the sender joins the room.
    *       {@code ROOM-ADDED:<roomId>,<senderId>} is broadcast to all clients.</li>
    *   <li>{@link Protocol#LEAVE_ROOM} ({@code ROOM-LEAVE}): the sender leaves the room. A room
-   *       that becomes empty is deleted. {@code ROOM-REMOVED:<roomId>,<senderId>} is broadcast to
+   *       that becomes empty is deleted,
+   *       unless it has a name. {@code ROOM-REMOVED:<roomId>,<senderId>} is broadcast to
    *       all clients.</li>
    *   <li>{@link Protocol#GET_ROOM_CLIENTS} ({@code ROOM-CLIENT-LIST}): the sender is sent
    *       {@code ROOM-CLIENTS:<id>,<id>,...}.</li>
@@ -90,8 +91,8 @@ public class RoomLogic {
   }
 
   /**
-   * Removes the sender from the room, deletes the room if it is now empty, and tells every
-   * client.
+   * Removes the sender from the room, deletes the room if it is now empty and has no name, and
+   * tells every client.
    *
    * @param sender is the client leaving.
    */
@@ -99,7 +100,7 @@ public class RoomLogic {
     RoomList rooms = RoomList.getInstance();
     synchronized (rooms) {
       this.room.remove(sender.getId());
-      if (this.room.isEmpty() && rooms.containsKey(this.room.getId())) {
+      if (this.room.shouldBeDeleted() && rooms.containsKey(this.room.getId())) {
         rooms.remove(this.room.getId());
       }
     }

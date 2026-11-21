@@ -42,12 +42,14 @@ import edu.ntnu.bidata.group1.utility.Role;
  * <table>
  *   <caption>What each role may do</caption>
  *   <tr><th>Method</th><th>GUEST</th><th>USER</th><th>OWNER</th></tr>
- *   <tr><td>{@link #getDevices()}, {@link #getRooms()}, {@link #getAutomations()}</td>
+ *   <tr><td>{@link #getDevices()}, {@link #getRooms()}, {@link #getRoomNames()},
+ *       {@link #getAutomations()}</td>
  *       <td>yes</td><td>yes</td><td>yes</td></tr>
  *   <tr><td>{@link #sendCommand(long, String, String)}, {@link #subscribe(long)},
  *       {@link #unsubscribe(long)}</td>
  *       <td>yes</td><td>yes</td><td>yes</td></tr>
- *   <tr><td>{@link #addDeviceToRoom(long, long)}, {@link #removeDeviceFromRoom(long, long)}</td>
+ *   <tr><td>{@link #createRoom(String)}, {@link #renameRoom(long, String)},
+ *       {@link #addDeviceToRoom(long, long)}, {@link #removeDeviceFromRoom(long, long)}</td>
  *       <td>no</td><td>yes</td><td>yes</td></tr>
  *   <tr><td>{@link #addAutomation(long, String, Condition, double, long, String, String)},
  *       {@link #removeAutomation(long)}</td><td>no</td><td>yes</td><td>yes</td></tr>
@@ -69,7 +71,9 @@ import edu.ntnu.bidata.group1.utility.Role;
  * owner.addDevice(1);                 // register client 1; every controller now knows it
  * user.addDevice(2);                  // throws AccessDeniedException: only owners add devices
  *
- * user.addDeviceToRoom(10, 1);        // put device 1 in room 10
+ * long kitchen = user.createRoom("Kitchen").join(); // the server chooses the id
+ * user.addDeviceToRoom(kitchen, 1);   // put device 1 in the kitchen
+ * user.renameRoom(kitchen, "Kitchen and dining");
  * guest.addDeviceToRoom(10, 1);       // throws AccessDeniedException
  *
  * guest.sendCommand(1, "value", "75"); // guests can control devices
@@ -116,6 +120,7 @@ public class Controller extends Device {
 
   private final Map<Long, ControlledDevice> devices = new LinkedHashMap<>();
   private final Map<Long, Set<Long>> rooms = new LinkedHashMap<>();
+  private final Map<Long, String> roomNames = new LinkedHashMap<>();
   private final Map<Long, Automation> automations = new LinkedHashMap<>();
   private final PendingRequests pending = new PendingRequests();
 
@@ -229,6 +234,53 @@ public class Controller extends Device {
   }
 
   /**
+   * Asks the server to create an empty room with the given name. The server chooses the room's
+   * id and broadcasts {@code ROOM-CREATED:<roomId>,<name>}; {@link #getRooms()} and
+   * {@link #getRoomNames()} change once it does.
+   *
+   * @param name the room's name; leading and trailing whitespace is removed
+   * @return completes with the new room's id when the server confirms, or fails with a
+   *     {@link RequestFailedException} if the server refuses or does not answer in time
+   * @throws AccessDeniedException if the role is {@link Role#GUEST}
+   * @throws IllegalArgumentException if the name is blank or contains {@code /}, {@code =} or
+   *     line breaks
+   */
+  public CompletableFuture<Long> createRoom(String name) {
+    require(Permission.MANAGE_ROOMS, "create rooms");
+    String trimmed = validateRoomName(name);
+    CompletableFuture<String> answer =
+        pending.add(Protocol.ROOM_CREATE, Protocol.ROOM_CREATED, trimmed);
+    sendMessage(MessageWorker.SERVER, Protocol.ROOM_CREATE.withValue(trimmed));
+    return answer.thenApply(reply -> Long.parseLong(reply.substring(0, reply.indexOf(','))));
+  }
+
+  /**
+   * Asks the server to set or change the name of a room. The server broadcasts
+   * {@code ROOM-RENAMED:<roomId>,<name>}; {@link #getRoomNames()} changes once it does.
+   *
+   * @param roomId the room's id
+   * @param newName the new name; leading and trailing whitespace is removed
+   * @return completes when the server confirms, or fails with a {@link RequestFailedException}
+   * @throws AccessDeniedException if the role is {@link Role#GUEST}
+   * @throws IllegalArgumentException if the room is unknown, or the name is blank or contains
+   *     {@code /}, {@code =} or line breaks
+   */
+  public CompletableFuture<Void> renameRoom(long roomId, String newName) {
+    require(Permission.MANAGE_ROOMS, "rename rooms");
+    String trimmed = validateRoomName(newName);
+    synchronized (rooms) {
+      if (!rooms.containsKey(roomId)) {
+        throw new IllegalArgumentException("Room " + roomId + " does not exist.");
+      }
+    }
+    String value = roomId + "," + trimmed;
+    CompletableFuture<String> answer =
+        pending.add(Protocol.ROOM_RENAME, Protocol.ROOM_RENAMED, value);
+    sendMessage(MessageWorker.SERVER, Protocol.ROOM_RENAME.withValue(value));
+    return answer.thenAccept(reply -> { });
+  }
+
+  /**
    * Asks the server to put a registered device in a room. The room is created if it does not
    * exist yet. {@link #getRooms()} changes once the server confirms.
    *
@@ -278,6 +330,21 @@ public class Controller extends Device {
         copy.put(entry.getKey(),
             Collections.unmodifiableSet(new LinkedHashSet<>(entry.getValue())));
       }
+    }
+    return Collections.unmodifiableMap(copy);
+  }
+
+  /**
+   * Returns the names of the rooms that have one, as confirmed by the server. Rooms created
+   * implicitly by {@link #addDeviceToRoom(long, long)} have no name until
+   * {@link #renameRoom(long, String)} gives them one. Every role may call this.
+   *
+   * @return an unmodifiable copy: room id to room name
+   */
+  public Map<Long, String> getRoomNames() {
+    Map<Long, String> copy;
+    synchronized (roomNames) {
+      copy = new LinkedHashMap<>(roomNames);
     }
     return Collections.unmodifiableMap(copy);
   }
@@ -553,7 +620,8 @@ public class Controller extends Device {
    * and automations accordingly.
    *
    * <p>Room messages add or remove a device from a room, and an empty room is discarded after
-   * its last device is removed. Device messages add or remove a controlled device, and a newly
+   * its last device is removed, unless it has a name. {@code ROOM-CREATED} and
+   * {@code ROOM-RENAMED} add a room or set its name. Device messages add or remove a controlled device, and a newly
    * added device is refreshed. Automation messages add or remove an automation, and triggered
    * automations are ignored because the device reports its own new state. Device online and
    * offline messages update the availability of an existing device. Error messages are passed
@@ -577,10 +645,30 @@ public class Controller extends Device {
             Set<Long> room = rooms.get(ids[0]);
             if (room != null) {
               room.remove(ids[1]);
-              if (room.isEmpty()) {
+              boolean named;
+              synchronized (roomNames) {
+                named = roomNames.containsKey(ids[0]);
+              }
+              if (room.isEmpty() && !named) {
                 rooms.remove(ids[0]);
               }
             }
+          }
+        }
+      }
+      case ROOM_CREATED, ROOM_RENAMED -> {
+        int comma = value.indexOf(',');
+        long roomId;
+        try {
+          roomId = Long.parseLong(value.substring(0, Math.max(comma, 0)).trim());
+        } catch (NumberFormatException e) {
+          return;
+        }
+        String name = value.substring(comma + 1);
+        synchronized (rooms) {
+          rooms.computeIfAbsent(roomId, id -> new LinkedHashSet<>());
+          synchronized (roomNames) {
+            roomNames.put(roomId, name);
           }
         }
       }
@@ -759,6 +847,25 @@ public class Controller extends Device {
     } catch (NumberFormatException e) {
       return null;
     }
+  }
+
+  /**
+   * Checks a room name the same way the server does, so a bad name fails at once.
+   *
+   * @param name the name to check
+   * @return the name without leading and trailing whitespace
+   * @throws IllegalArgumentException if the name is blank or contains {@code /}, {@code =} or
+   *     line breaks
+   */
+  private static String validateRoomName(String name) {
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Room name cannot be empty.");
+    }
+    String trimmed = name.trim();
+    if (trimmed.chars().anyMatch(c -> "/=\n\r".indexOf(c) >= 0)) {
+      throw new IllegalArgumentException("Room name cannot contain '/', '=' or line breaks.");
+    }
+    return trimmed;
   }
 
   private ControlledDevice findDevice(long deviceId) {
