@@ -15,6 +15,7 @@ public class RoomList {
   private static volatile RoomList instance;
 
   private Map<Long, Room> rooms;
+  private final Long idCounter = 1L;
 
   /**
    * Instantiates the class with an empty map.
@@ -50,11 +51,23 @@ public class RoomList {
     if (room == null) {
       throw new IllegalArgumentException("Room cannot be null.");
     }
-    if (this.rooms.containsKey(room.getId())) {
+    if (this.rooms.putIfAbsent(room.getId(), room) != null) {
       throw new IllegalArgumentException(
           "Room with ID " + room.getId() + " already exists.");
     }
+  }
+
+  /**
+   * Creates a named {@link Room} with an ID chosen by the server, and puts it in the map.
+   *
+   * @param name is the name of the new room.
+   * @return the new {@link Room}.
+   * @throws IllegalArgumentException if the name is not valid.
+   */
+  public synchronized Room create(String name) throws IllegalArgumentException {
+    Room room = new Room(nextId(), name);
     this.rooms.put(room.getId(), room);
+    return room;
   }
 
   /**
@@ -131,6 +144,20 @@ public class RoomList {
    */
   public boolean containsKey(long id) {
     return this.rooms.containsKey(id);
+  }
+
+  /**
+   * Returns the next free room ID. IDs start at 1 and are never reused while the server runs,
+   * and IDs already taken by rooms created with {@code ROOM-ADD} are skipped.
+   *
+   * @return a room ID that is not in use.
+   */
+  private synchronized long nextId() {
+    long id = this.idCounter;
+    do {
+      id++;
+    } while (this.rooms.containsKey(id));
+    return id;
   }
 
   /**
