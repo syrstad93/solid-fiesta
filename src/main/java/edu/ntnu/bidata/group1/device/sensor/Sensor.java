@@ -38,7 +38,7 @@ import edu.ntnu.bidata.group1.utility.Protocol;
 public abstract class Sensor extends Device {
 
   /** How often the sensor measures and reports, in milliseconds. */
-  public static final long MEASURE_INTERVAL_MS = 2000;
+  public static final long MEASURE_INTERVAL_MS = 500;
 
   /**
    * Creates a sensor with the given name. It is connected, and starts measuring, when
