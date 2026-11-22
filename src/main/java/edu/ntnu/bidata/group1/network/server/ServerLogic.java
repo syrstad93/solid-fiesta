@@ -582,8 +582,8 @@ public class ServerLogic {
     String status = this.handlers.containsKey(deviceId) ? "ONLINE" : "OFFLINE";
     String value = deviceId + "," + this.clients.nameOf(deviceId) + "," + status;
 
-    String kind = String.valueOf(this.clients.kindOf(deviceId));
-    if (!kind.equals("null")) {
+    String kind = this.clients.kindOf(deviceId).orElse(null);
+    if (kind != null) {
       value = value + "," + kind;
     }
     return value;
