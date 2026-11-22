@@ -1,0 +1,249 @@
+/* Smart Home GUI: one dark theme for all windows. */
+
+.root {
+  -fx-font-size: 13px;
+  -fx-base: #262a33;
+  -fx-background: #1b1e25;
+  -fx-control-inner-background: #232730;
+  -fx-accent: #4f8cff;
+  -fx-focus-color: #4f8cff;
+  -fx-faint-focus-color: transparent;
+  -fx-text-fill: #e6e8ee;
+}
+
+.label {
+  -fx-text-fill: #e6e8ee;
+}
+
+.muted,
+.label.muted {
+  -fx-text-fill: #9aa1b2;
+}
+
+.error,
+.label.error {
+  -fx-text-fill: #ff6b6b;
+}
+
+.app-title {
+  -fx-font-size: 22px;
+  -fx-font-weight: bold;
+}
+
+.section-title {
+  -fx-font-size: 15px;
+  -fx-font-weight: bold;
+}
+
+/* ---- Role selection ---- */
+
+.role-card {
+  -fx-background-color: #232730;
+  -fx-background-radius: 10;
+  -fx-border-color: #343946;
+  -fx-border-radius: 10;
+  -fx-border-width: 2;
+  -fx-padding: 14;
+  -fx-pref-height: 130;
+}
+
+.role-card:hover {
+  -fx-border-color: #4a5163;
+}
+
+.role-card:selected {
+  -fx-background-color: #23324d;
+  -fx-border-color: #4f8cff;
+}
+
+.role-name {
+  -fx-font-size: 16px;
+  -fx-font-weight: bold;
+}
+
+.role-description {
+  -fx-text-fill: #b3b9c8;
+  -fx-font-size: 12px;
+}
+
+.button.primary {
+  -fx-background-color: #4f8cff;
+  -fx-text-fill: white;
+  -fx-font-weight: bold;
+  -fx-padding: 8 22;
+  -fx-background-radius: 6;
+}
+
+.button.primary:hover {
+  -fx-background-color: #6a9dff;
+}
+
+/* ---- Dashboard ---- */
+
+.header {
+  -fx-padding: 16 20;
+  -fx-background-color: #20242c;
+  -fx-border-color: transparent transparent #313644 transparent;
+}
+
+.role-badge {
+  -fx-padding: 3 10;
+  -fx-background-radius: 20;
+  -fx-font-weight: bold;
+  -fx-font-size: 11px;
+}
+
+.role-badge.GUEST {
+  -fx-background-color: #5a4a1f;
+  -fx-text-fill: #ffd479;
+}
+
+.role-badge.USER {
+  -fx-background-color: #1f3d5a;
+  -fx-text-fill: #8cc4ff;
+}
+
+.role-badge.OWNER {
+  -fx-background-color: #234d33;
+  -fx-text-fill: #7ee2a0;
+}
+
+.toolbar {
+  -fx-padding: 10 16;
+  -fx-background-color: #1f232b;
+}
+
+.cards-scroll,
+.cards-scroll > .viewport {
+  -fx-background-color: #1b1e25;
+}
+
+.status-bar {
+  -fx-padding: 8 16;
+  -fx-background-color: #20242c;
+  -fx-text-fill: #b3b9c8;
+}
+
+.status-bar.error {
+  -fx-text-fill: #ff6b6b;
+}
+
+.panel {
+  -fx-background-color: #232730;
+  -fx-background-radius: 10;
+  -fx-padding: 14;
+}
+
+.notice {
+  -fx-background-color: #3a3220;
+  -fx-text-fill: #ffd479;
+  -fx-padding: 8 12;
+  -fx-background-radius: 6;
+}
+
+/* ---- Device cards ---- */
+
+.device-card {
+  -fx-background-color: #232730;
+  -fx-background-radius: 12;
+  -fx-border-color: #313644;
+  -fx-border-radius: 12;
+  -fx-padding: 14;
+}
+
+.card-title {
+  -fx-font-size: 14px;
+  -fx-font-weight: bold;
+}
+
+.status-pill {
+  -fx-padding: 2 8;
+  -fx-background-radius: 10;
+  -fx-font-size: 11px;
+}
+
+.status-pill.online {
+  -fx-background-color: #1f4030;
+  -fx-text-fill: #7ee2a0;
+}
+
+.status-pill.offline {
+  -fx-background-color: #4a2626;
+  -fx-text-fill: #ff9b9b;
+}
+
+.device-visual {
+  -fx-background-color: #1b1e25;
+  -fx-background-radius: 10;
+  -fx-padding: 10;
+}
+
+.visual-caption {
+  -fx-text-fill: #c9cedb;
+  -fx-font-weight: bold;
+}
+
+.sensor-value {
+  -fx-font-size: 30px;
+  -fx-font-weight: bold;
+}
+
+.sensor-value.cold {
+  -fx-text-fill: #6ec1ff;
+}
+
+.sensor-value.comfortable {
+  -fx-text-fill: #7ee2a0;
+}
+
+.sensor-value.warm {
+  -fx-text-fill: #ffa25e;
+}
+
+.slider-value {
+  -fx-text-fill: #9aa1b2;
+}
+
+.toggle-button.switch {
+  -fx-min-width: 56;
+  -fx-background-radius: 14;
+  -fx-font-weight: bold;
+}
+
+.toggle-button.switch:selected {
+  -fx-background-color: #34c759;
+  -fx-text-fill: #0d2414;
+}
+
+.toggle-button.option:selected {
+  -fx-background-color: #4f8cff;
+  -fx-text-fill: white;
+}
+
+.button.danger {
+  -fx-background-color: transparent;
+  -fx-border-color: #6b3131;
+  -fx-border-radius: 6;
+  -fx-text-fill: #ff8a8a;
+}
+
+.button.danger:hover {
+  -fx-background-color: #3a2020;
+}
+
+/* ---- Lists ---- */
+
+.list-cell:filled:selected,
+.list-cell:filled:selected:focused {
+  -fx-background-color: #2f4d80;
+  -fx-text-fill: white;
+}
+
+.list-cell {
+  -fx-padding: 6 8;
+}
+
+.owner-bars {
+  -fx-padding: 0 0 10 0;
+  -fx-border-color: transparent transparent #313644 transparent;
+}
