@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.Function;
@@ -67,6 +68,7 @@ public class DashboardController {
 
     view.getRoomsView().setOnCreateRoom(this::createRoom);
     view.getRoomsView().setOnRenameRoom(this::renameRoom);
+    view.getRoomsView().setOnDeleteRoom(this::deleteRoom);
     view.getRoomsView().setOnAddToRoom(this::addToRoom);
     view.getRoomsView().setOnRemoveFromRoom(this::removeFromRoom);
 
@@ -294,6 +296,18 @@ public class DashboardController {
   private void renameRoom(long roomId, String name) {
     request(() -> home.renameRoom(roomId, name), done -> "Renamed the room to " + name.trim()
         + ".");
+  }
+
+  private void deleteRoom(long roomId) {
+    String label = model.roomLabel(roomId);
+    int count = model.getRooms().getOrDefault(roomId, Set.of()).size();
+    String devices = count == 0 ? "It is empty."
+        : count == 1 ? "The device in it stays in the home; it is just no longer in this room."
+        : "The " + count + " devices in it stay in the home; they are just no longer in this "
+            + "room.";
+    if (view.confirm("Delete the room " + label + "? " + devices)) {
+      request(() -> home.deleteRoom(roomId), done -> "Deleted the room " + label + ".");
+    }
   }
 
   private void addToRoom(long roomId, Long deviceId) {
