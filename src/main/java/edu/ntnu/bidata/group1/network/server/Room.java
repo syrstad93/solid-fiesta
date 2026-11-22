@@ -45,6 +45,8 @@ public class Room {
   public Room(long id, String name) {
     setId(id);
     setName(name);
+    this.handlers = new ConcurrentHashMap<>();
+    this.logic = new RoomLogic(this);
   }
 
   /**
