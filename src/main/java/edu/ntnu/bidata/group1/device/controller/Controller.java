@@ -49,6 +49,7 @@ import edu.ntnu.bidata.group1.utility.Role;
  *       {@link #unsubscribe(long)}</td>
  *       <td>yes</td><td>yes</td><td>yes</td></tr>
  *   <tr><td>{@link #createRoom(String)}, {@link #renameRoom(long, String)},
+ *       {@link #deleteRoom(long)},
  *       {@link #addDeviceToRoom(long, long)}, {@link #removeDeviceFromRoom(long, long)}</td>
  *       <td>no</td><td>yes</td><td>yes</td></tr>
  *   <tr><td>{@link #addAutomation(long, String, Condition, double, long, String, String)},
@@ -156,7 +157,17 @@ public class Controller extends Device {
    */
   @Override
   protected String helloValue() {
-    return super.helloValue() + "," + role.name();
+    return getName() + "," + getType() + "," + role.name();
+  }
+
+  /**
+   * A controller has no kind: it gives its role in {@code HELLO} instead.
+   *
+   * @return {@code null}
+   */
+  @Override
+  public String getKind() {
+    return null;
   }
 
   /**
@@ -277,6 +288,29 @@ public class Controller extends Device {
     CompletableFuture<String> answer =
         pending.add(Protocol.ROOM_RENAME, Protocol.ROOM_RENAMED, value);
     sendMessage(MessageWorker.SERVER, Protocol.ROOM_RENAME.withValue(value));
+    return answer.thenAccept(reply -> { });
+  }
+
+  /**
+   * Asks the server to delete a room, named or not. The devices in it stay registered; they
+   * are only no longer in the room. The server broadcasts {@code ROOM-DELETED:<roomId>};
+   * {@link #getRooms()} and {@link #getRoomNames()} change once it does.
+   *
+   * @param roomId the room's id
+   * @return completes when the server confirms, or fails with a {@link RequestFailedException}
+   * @throws AccessDeniedException if the role is {@link Role#GUEST}
+   * @throws IllegalArgumentException if the room is unknown
+   */
+  public CompletableFuture<Void> deleteRoom(long roomId) {
+    require(Permission.MANAGE_ROOMS, "delete rooms");
+    synchronized (rooms) {
+      if (!rooms.containsKey(roomId)) {
+        throw new IllegalArgumentException("Room " + roomId + " does not exist.");
+      }
+    }
+    CompletableFuture<String> answer =
+        pending.add(Protocol.ROOM_DELETE, Protocol.ROOM_DELETED, String.valueOf(roomId));
+    sendMessage(MessageWorker.SERVER, Protocol.ROOM_DELETE.withValue(roomId));
     return answer.thenAccept(reply -> { });
   }
 
@@ -620,7 +654,8 @@ public class Controller extends Device {
    * and automations accordingly.
    *
    * <p>Room messages add or remove a device from a room, and an empty room is discarded after
-   * its last device is removed, unless it has a name. {@code ROOM-CREATED} and
+   * its last device is removed, unless it has a name. {@code ROOM-DELETED} forgets a room and
+   * its name. {@code ROOM-CREATED} and
    * {@code ROOM-RENAMED} add a room or set its name. Device messages add or remove a controlled device, and a newly
    * added device is refreshed. Automation messages add or remove an automation, and triggered
    * automations are ignored because the device reports its own new state. Device online and
@@ -656,6 +691,15 @@ public class Controller extends Device {
           }
         }
       }
+      case ROOM_DELETED -> {
+        long roomId = firstNumber(value);
+        synchronized (rooms) {
+          rooms.remove(roomId);
+          synchronized (roomNames) {
+            roomNames.remove(roomId);
+          }
+        }
+      }
       case ROOM_CREATED, ROOM_RENAMED -> {
         int comma = value.indexOf(',');
         long roomId;
@@ -673,7 +717,8 @@ public class Controller extends Device {
         }
       }
       case DEVICE_ADDED, DEVICE_REMOVED -> {
-        String[] parts = value.split(",", 3);
+        // <id>,<name>,<ONLINE|OFFLINE>[,<kind>]
+        String[] parts = value.split(",", 4);
         long deviceId = firstNumber(value);
         if (deviceId < 0) {
           return;
@@ -685,9 +730,12 @@ public class Controller extends Device {
             isNew = !devices.containsKey(deviceId);
             device = devices.computeIfAbsent(deviceId, ControlledDevice::new);
           }
-          if (parts.length == 3) {
+          if (parts.length >= 3) {
             device.setName(parts[1]);
             device.setOnline(!parts[2].equals("OFFLINE"));
+          }
+          if (parts.length == 4 && DeviceType.isValidKind(parts[3])) {
+            device.setKind(parts[3]);
           }
           if (isNew) {
             refresh(deviceId);

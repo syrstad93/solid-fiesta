@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Remembers every client that has introduced itself with {@code HELLO}: its name, its type and,
- * for controllers, its role, and which id belongs to which name.
+ * Remembers every client that has introduced itself with {@code HELLO}: its name, its type, its
+ * kind for devices or its role for controllers, and which id belongs to which name.
  *
  * <p>Names are what make ids stable. A client that connects again with a name it has used before
  * gets the same id back, so its registration, rooms, automations and subscribers still apply.
@@ -26,8 +26,21 @@ public class ClientDirectory {
    * @param name the client's name, for example {@code kitchen-light}
    * @param type what kind of client it is
    * @param role the controller's role; {@code null} for every other type
+   * @param kind what exactly the device is, for example {@code Fan}; {@code null} for a
+   *     controller, or a device that did not say
    */
-  public record Client(String name, DeviceType type, Role role) {
+  public record Client(String name, DeviceType type, Role role, String kind) {
+
+    /**
+     * Creates a client without a kind.
+     *
+     * @param name the client's name
+     * @param type what kind of client it is
+     * @param role the controller's role; {@code null} for every other type
+     */
+    public Client(String name, DeviceType type, Role role) {
+      this(name, type, role, null);
+    }
   }
 
   private final Map<String, Long> idsByName = new HashMap<>();
@@ -48,10 +61,14 @@ public class ClientDirectory {
    * {@code OWNER}. Clients and server share these enums, so they always agree on what is
    * allowed.
    *
-   * @param value {@code <name>,<type>} or {@code <name>,CONTROLLER,<role>}
+   * <p>An actuator or sensor may give its kind as a third part, for example
+   * {@code kitchen-light,ACTUATOR,Light}; see {@link DeviceType#isValidKind(String)}.
+   *
+   * @param value {@code <name>,<type>}, {@code <name>,<type>,<kind>} or
+   *     {@code <name>,CONTROLLER,<role>}
    * @return what the client said about itself
-   * @throws IllegalArgumentException if the value is malformed, the type or role is unknown, a
-   *     controller gives no role, or another client type gives one
+   * @throws IllegalArgumentException if the value is malformed, the type, role or kind is not
+   *     valid, a controller gives no role, or another client type gives one
    */
   public static Client parseHello(String value) {
     String[] parts = value == null ? new String[0] : value.split(",", -1);
@@ -75,10 +92,14 @@ public class ClientDirectory {
     }
 
     if (type != DeviceType.CONTROLLER) {
-      if (!roleName.isEmpty()) {
-        throw new IllegalArgumentException("Only a controller gives a role.");
+      if (roleName.isEmpty()) {
+        return new Client(name, type, null);
       }
-      return new Client(name, type, null);
+      if (!DeviceType.isValidKind(roleName)) {
+        throw new IllegalArgumentException("Only a controller gives a role. A device may give "
+            + "its kind, a class name such as Fan: " + roleName);
+      }
+      return new Client(name, type, null, roleName);
     }
 
     Role role;
@@ -125,6 +146,18 @@ public class ClientDirectory {
    */
   public synchronized boolean isNamed(long id) {
     return clientsById.containsKey(id);
+  }
+
+  /**
+   * Returns what exactly a device is, as it said in its {@code HELLO}. Kept after the device
+   * disconnects.
+   *
+   * @param id the device's id
+   * @return the kind, for example {@code Fan}, or empty if the client gave none
+   */
+  public synchronized Optional<String> kindOf(long id) {
+    Client client = clientsById.get(id);
+    return client == null ? Optional.empty() : Optional.ofNullable(client.kind());
   }
 
   /**

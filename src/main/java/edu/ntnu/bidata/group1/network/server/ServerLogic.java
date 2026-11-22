@@ -196,7 +196,7 @@ public class ServerLogic {
     switch (protocol) {
       case HELLO -> hello(messageWorker, sender);
       case PING -> pingResponse(messageWorker, sender);
-      case ROOM_CREATE, ROOM_RENAME, ROOM_ADD, ROOM_REMOVE, ROOM_LIST ->
+      case ROOM_CREATE, ROOM_RENAME, ROOM_ADD, ROOM_REMOVE, ROOM_DELETE, ROOM_LIST ->
           roomCommand(protocol, messageWorker, sender);
       case DEVICE_ADD, DEVICE_REMOVE, DEVICE_LIST -> deviceCommand(protocol, messageWorker, sender);
       case STATE -> stateUpdate(messageWorker, sender);
@@ -223,6 +223,9 @@ public class ServerLogic {
    *   <li>{@code ROOM-REMOVE:<roomId>,<clientId>} takes a client out of a room. A room that
    *       becomes empty is deleted unless it has a name. On success,
    *       {@code ROOM-REMOVED:<roomId>,<clientId>} is broadcast to all clients.</li>
+   *   <li>{@code ROOM-DELETE:<roomId>} deletes a room, named or not. The clients in it are only
+   *       taken out of the room; registered devices stay registered. On success,
+   *       {@code ROOM-DELETED:<roomId>} is broadcast to all clients.</li>
    *   <li>{@code ROOM-LIST} sends the sender one {@code ROOM-CREATED:<roomId>,<name>} message
    *       for every named room, then one {@code ROOM-ADDED:<roomId>,<clientId>} message for every
    *       client in every room.</li>
@@ -250,6 +253,10 @@ public class ServerLogic {
       }
       case ROOM_RENAME -> {
         renameRoom(messageWorker.getCommandValue());
+        return;
+      }
+      case ROOM_DELETE -> {
+        deleteRoom(messageWorker.getCommandValue());
         return;
       }
       default -> {
@@ -338,6 +345,28 @@ public class ServerLogic {
       room = this.rooms.create(value);
     }
     broadcastFromServer(Protocol.ROOM_CREATED.withValue(room.getId() + "," + room.getName()));
+  }
+
+  /**
+   * Handles {@code ROOM-DELETE:<roomId>}: deletes the room, and broadcasts
+   * {@code ROOM-DELETED:<roomId>}. The clients that were in it are not told one by one: a
+   * controller that receives {@code ROOM-DELETED} forgets the room and everything in it.
+   *
+   * @param value is the room id.
+   * @throws IllegalArgumentException if the id is not a number, or the room does not exist.
+   */
+  private void deleteRoom(String value) {
+    long roomId;
+    try {
+      roomId = Long.parseLong(value.trim());
+    } catch (NumberFormatException e) {
+      throw new IllegalArgumentException("Room id must be a number, for example ROOM-DELETE:1");
+    }
+    synchronized (this.rooms) {
+      // Throws IllegalArgumentException if there is no such room.
+      this.rooms.remove(roomId);
+    }
+    broadcastFromServer(Protocol.ROOM_DELETED.withValue(roomId));
   }
 
   /**
@@ -488,7 +517,7 @@ public class ServerLogic {
   }
 
   /**
-   * Handles a client's introduction, {@code HELLO:<name>,<type>} or
+   * Handles a client's introduction, {@code HELLO:<name>,<type>[,<kind>]} or
    * {@code HELLO:<name>,CONTROLLER,<role>}, and answers with {@code WELCOME:<id>}.
    *
    * <p>If the name has been used before, the client gets that name's id back: its connection is
@@ -572,14 +601,21 @@ public class ServerLogic {
 
   /**
    * Returns the value of a {@code DEVICE-ADDED} message for a device:
-   * {@code <id>,<name>,<ONLINE|OFFLINE>}.
+   * {@code <id>,<name>,<ONLINE|OFFLINE>,<kind>}, or without {@code ,<kind>} if the device did
+   * not give one in {@code HELLO}.
    *
    * @param deviceId is the device's id.
    * @return the value.
    */
   private String deviceAddedValue(long deviceId) {
     String status = this.handlers.containsKey(deviceId) ? "ONLINE" : "OFFLINE";
-    return deviceId + "," + this.clients.nameOf(deviceId) + "," + status;
+    String value = deviceId + "," + this.clients.nameOf(deviceId) + "," + status;
+
+    String kind = this.clients.kindOf(deviceId).orElse(null);
+    if (kind != null) {
+      value = value + "," + kind;
+    }
+    return value;
   }
 
   /**

@@ -130,4 +130,41 @@ class ClientDirectoryTest {
     assertEquals(Optional.empty(), directory.get(7));
     assertEquals("CH007", directory.nameOf(7));
   }
+
+  /**
+   * Verifies that a device may give its kind, the name of its class, as the third part of its
+   * {@code HELLO}, and that the directory keeps it.
+   *
+   * <p>{@code office-fan,ACTUATOR,Fan} is parsed with the kind {@code Fan}. After the fan is
+   * introduced with id {@code 8}, {@link ClientDirectory#kindOf(long)} returns {@code Fan} for
+   * {@code 8}, and nothing for a client that gave no kind.
+   */
+  @Test
+  void devicesCanGiveTheirKind() {
+    assertEquals(new ClientDirectory.Client("office-fan", DeviceType.ACTUATOR, null, "Fan"),
+        ClientDirectory.parseHello("office-fan,ACTUATOR,Fan"));
+    assertEquals("TemperatureSensor",
+        ClientDirectory.parseHello("thermo,SENSOR,TemperatureSensor").kind());
+
+    ClientDirectory directory = new ClientDirectory();
+    directory.introduce(ClientDirectory.parseHello("office-fan,ACTUATOR,Fan"), 8);
+    directory.introduce(ClientDirectory.parseHello("lamp,ACTUATOR"), 9);
+    assertEquals(Optional.of("Fan"), directory.kindOf(8));
+    assertEquals(Optional.empty(), directory.kindOf(9));
+    assertEquals(Optional.empty(), directory.kindOf(10));
+  }
+
+  /**
+   * Verifies that a kind that is not written like a class name is rejected, so a role such as
+   * {@code OWNER} can never be read as a device's kind.
+   */
+  @Test
+  void rejectsInvalidKinds() {
+    assertThrows(IllegalArgumentException.class,
+        () -> ClientDirectory.parseHello("lamp,ACTUATOR,OWNER"));
+    assertThrows(IllegalArgumentException.class,
+        () -> ClientDirectory.parseHello("lamp,ACTUATOR,fan"));
+    assertThrows(IllegalArgumentException.class,
+        () -> ClientDirectory.parseHello("lamp,ACTUATOR,Door Lock"));
+  }
 }

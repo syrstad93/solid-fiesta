@@ -21,6 +21,7 @@ public class ControlledDevice {
   private String name = "";
   private boolean online = true;
   private DeviceType type;
+  private String kind;
   private final Map<String, CommandSpec> commands = new LinkedHashMap<>();
   private final Map<String, String> state = new LinkedHashMap<>();
 
@@ -83,6 +84,21 @@ public class ControlledDevice {
   }
 
   /**
+   * Returns what exactly the device is, as the server reported it: the name of the device's
+   * class, for example {@code Fan}. Known even while the device is offline, because the server
+   * remembers it.
+   *
+   * @return the kind, or empty if the device did not give one
+   */
+  public synchronized Optional<String> getKind() {
+    return Optional.ofNullable(kind);
+  }
+
+  synchronized void setKind(String kind) {
+    this.kind = kind;
+  }
+
+  /**
    * Returns the command with the given name, if the device has announced it.
    *
    * @param name the command name
@@ -125,6 +141,7 @@ public class ControlledDevice {
   @Override
   public synchronized String toString() {
     return "Device " + id + " " + name + " (" + (type == null ? "unknown type" : type)
+        + (kind == null ? "" : " " + kind)
         + (online ? "" : ", offline") + ")"
         + " commands=" + commands.values() + " state=" + state;
   }
