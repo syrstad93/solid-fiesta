@@ -123,12 +123,27 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
 
   /**
    * Returns the value of the {@code HELLO} message this device introduces itself with:
-   * {@code <name>,<type>}. A controller adds its role.
+   * {@code <name>,<type>,<kind>}, or {@code <name>,<type>} if the device has no kind. A
+   * controller gives its role instead of a kind.
    *
-   * @return the value, for example {@code kitchen-light,ACTUATOR}
+   * @return the value, for example {@code kitchen-light,ACTUATOR,Light}
    */
   protected String helloValue() {
-    return name + "," + getType();
+    String kind = getKind();
+    return name + "," + getType() + (kind == null ? "" : "," + kind);
+  }
+
+  /**
+   * Returns what exactly this device is: the name of its class, for example {@code Light} or
+   * {@code TemperatureSensor}. The server remembers it, so controllers know what a device is
+   * even while it is offline.
+   *
+   * @return the kind, or {@code null} if the class name cannot be used as one, for example for
+   *     an anonymous class; see {@link DeviceType#isValidKind(String)}
+   */
+  public String getKind() {
+    String kind = getClass().getSimpleName();
+    return DeviceType.isValidKind(kind) ? kind : null;
   }
 
   /**
@@ -225,7 +240,7 @@ public abstract class Device implements Messenger<String, ClientConnectionHolder
    *
    * @return the identifier, or 0 before the server has answered {@code HELLO}
    */
-  protected long getId() {
+  public long getId() {
     return id;
   }
 
