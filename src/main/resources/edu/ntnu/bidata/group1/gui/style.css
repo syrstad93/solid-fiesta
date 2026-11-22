@@ -247,3 +247,14 @@
   -fx-padding: 0 0 10 0;
   -fx-border-color: transparent transparent #313644 transparent;
 }
+
+/* ---- Example text in empty fields ---- */
+
+.text-input {
+  -fx-prompt-text-fill: #8a91a3;
+}
+
+/* JavaFX hides the example text while a field has focus; keep it visible until typing starts. */
+.text-input:focused {
+  -fx-prompt-text-fill: #6f7688;
+}
