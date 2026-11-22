@@ -156,7 +156,17 @@ public class Controller extends Device {
    */
   @Override
   protected String helloValue() {
-    return super.helloValue() + "," + role.name();
+    return getName() + "," + getType() + "," + role.name();
+  }
+
+  /**
+   * A controller has no kind: it gives its role in {@code HELLO} instead.
+   *
+   * @return {@code null}
+   */
+  @Override
+  public String getKind() {
+    return null;
   }
 
   /**
@@ -673,7 +683,8 @@ public class Controller extends Device {
         }
       }
       case DEVICE_ADDED, DEVICE_REMOVED -> {
-        String[] parts = value.split(",", 3);
+        // <id>,<name>,<ONLINE|OFFLINE>[,<kind>]
+        String[] parts = value.split(",", 4);
         long deviceId = firstNumber(value);
         if (deviceId < 0) {
           return;
@@ -685,9 +696,12 @@ public class Controller extends Device {
             isNew = !devices.containsKey(deviceId);
             device = devices.computeIfAbsent(deviceId, ControlledDevice::new);
           }
-          if (parts.length == 3) {
+          if (parts.length >= 3) {
             device.setName(parts[1]);
             device.setOnline(!parts[2].equals("OFFLINE"));
+          }
+          if (parts.length == 4 && DeviceType.isValidKind(parts[3])) {
+            device.setKind(parts[3]);
           }
           if (isNew) {
             refresh(deviceId);
