@@ -488,7 +488,7 @@ public class ServerLogic {
   }
 
   /**
-   * Handles a client's introduction, {@code HELLO:<name>,<type>} or
+   * Handles a client's introduction, {@code HELLO:<name>,<type>[,<kind>]} or
    * {@code HELLO:<name>,CONTROLLER,<role>}, and answers with {@code WELCOME:<id>}.
    *
    * <p>If the name has been used before, the client gets that name's id back: its connection is
@@ -572,14 +572,21 @@ public class ServerLogic {
 
   /**
    * Returns the value of a {@code DEVICE-ADDED} message for a device:
-   * {@code <id>,<name>,<ONLINE|OFFLINE>}.
+   * {@code <id>,<name>,<ONLINE|OFFLINE>,<kind>}, or without {@code ,<kind>} if the device did
+   * not give one in {@code HELLO}.
    *
    * @param deviceId is the device's id.
    * @return the value.
    */
   private String deviceAddedValue(long deviceId) {
     String status = this.handlers.containsKey(deviceId) ? "ONLINE" : "OFFLINE";
-    return deviceId + "," + this.clients.nameOf(deviceId) + "," + status;
+    String value = deviceId + "," + this.clients.nameOf(deviceId) + "," + status;
+
+    String kind = String.valueOf(this.clients.kindOf(deviceId));
+    if (!kind.equals("null")) {
+      value = value + "," + kind;
+    }
+    return value;
   }
 
   /**
