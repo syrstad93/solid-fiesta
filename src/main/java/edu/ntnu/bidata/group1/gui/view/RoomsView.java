@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import edu.ntnu.bidata.group1.device.controller.ControlledDevice;
 import edu.ntnu.bidata.group1.gui.model.HomeModel;
@@ -35,6 +36,7 @@ public class RoomsView extends BorderPane {
   private final Label roomTitle = new Label("Select a room");
   private final TextField renameField = new TextField();
   private final Button renameButton = new Button("Rename");
+  private final Button deleteButton = new Button("Delete room");
   private final ListView<Choice> devicesInRoom = new ListView<>();
   private final Button removeFromRoomButton = new Button("Remove from room");
   private final ComboBox<Choice> deviceToAdd = new ComboBox<>();
@@ -67,7 +69,8 @@ public class RoomsView extends BorderPane {
     renameField.setPromptText("New name");
     renameField.setOnAction(event -> renameButton.fire());
     HBox.setHgrow(renameField, Priority.ALWAYS);
-    HBox renameBar = new HBox(8, renameField, renameButton);
+    deleteButton.getStyleClass().add("danger");
+    HBox renameBar = new HBox(8, renameField, renameButton, deleteButton);
     devicesInRoom.setPlaceholder(new Label("No devices in this room"));
     deviceToAdd.setPromptText("Choose a device");
     deviceToAdd.setMaxWidth(Double.MAX_VALUE);
@@ -104,6 +107,19 @@ public class RoomsView extends BorderPane {
     renameButton.setOnAction(event -> {
       if (shownRoom != null) {
         listener.accept(shownRoom, renameField.getText());
+      }
+    });
+  }
+
+  /**
+   * Sets what happens when the user deletes the selected room.
+   *
+   * @param listener receives the room's id
+   */
+  public void setOnDeleteRoom(LongConsumer listener) {
+    deleteButton.setOnAction(event -> {
+      if (shownRoom != null) {
+        listener.accept(shownRoom);
       }
     });
   }
@@ -155,7 +171,7 @@ public class RoomsView extends BorderPane {
         + ") can see rooms, but not change them. Users and owners can.");
     notice.setVisible(!canManage);
     notice.setManaged(!canManage);
-    for (var node : List.of(newRoomName, createButton, renameField, renameButton,
+    for (var node : List.of(newRoomName, createButton, renameField, renameButton, deleteButton,
         removeFromRoomButton, deviceToAdd, addToRoomButton)) {
       node.setDisable(!canManage);
     }
