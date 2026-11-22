@@ -94,6 +94,12 @@ public enum Protocol {
   /** {@code ROOM-REMOVE:<roomId>,<id>} - take a client out of a room. */
   ROOM_REMOVE("ROOM-REMOVE", Kind.REQUEST),
 
+  /**
+   * {@code ROOM-DELETE:<roomId>} - delete a room, named or not. The devices in it stay
+   * registered; they are only no longer in the room.
+   */
+  ROOM_DELETE("ROOM-DELETE", Kind.REQUEST),
+
   /** {@code ROOM-LIST} - send me every room and the clients in it. */
   ROOM_LIST("ROOM-LIST", Kind.REQUEST),
 
@@ -183,6 +189,9 @@ public enum Protocol {
 
   /** {@code ROOM-REMOVED:<roomId>,<id>} - broadcast: a client was taken out of a room. */
   ROOM_REMOVED("ROOM-REMOVED", Kind.REPLY),
+
+  /** {@code ROOM-DELETED:<roomId>} - broadcast: a room was deleted, with everything in it. */
+  ROOM_DELETED("ROOM-DELETED", Kind.REPLY),
 
   /** {@code ROOM-CLIENTS:<id>,<id>,...} - answer to {@link #GET_ROOM_CLIENTS}. */
   ROOM_CLIENTS("ROOM-CLIENTS", Kind.REPLY),
