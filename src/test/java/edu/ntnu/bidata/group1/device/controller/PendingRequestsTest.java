@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import edu.ntnu.bidata.group1.device.controller.PendingRequests;
-import edu.ntnu.bidata.group1.device.controller.RequestFailedException;
 import edu.ntnu.bidata.group1.utility.Protocol;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -112,6 +110,8 @@ class PendingRequestsTest {
   @Test
   void aboutOfTakesTheRightPartOfTheValue() {
     assertEquals("5", PendingRequests.aboutOf(Protocol.DEVICE_ADDED, "5,kitchen-light,ONLINE"));
+    assertEquals("5",
+        PendingRequests.aboutOf(Protocol.DEVICE_ADDED, "5,kitchen-light,ONLINE,Light"));
     assertEquals("3,temperature,ABOVE,25.0,1,power:true", PendingRequests.aboutOf(
         Protocol.AUTOMATION_ADDED, "7,3,temperature,ABOVE,25.0,1,power:true"));
     assertEquals("10,5", PendingRequests.aboutOf(Protocol.ROOM_ADDED, "10,5"));
