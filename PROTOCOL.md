@@ -39,7 +39,7 @@ This document describes every message that the server and its clients (actuators
 The first message a client sends is an introduction, and the server answers with the client's id:
 
 ```
-client → server   SE000/CH000/HELLO:kitchen-light,ACTUATOR/=
+client → server   SE000/CH000/HELLO:kitchen-light,ACTUATOR,Light/=
 server → client   CH001/SE000/WELCOME:1/=
 ```
 
@@ -47,7 +47,8 @@ server → client   CH001/SE000/WELCOME:1/=
 |---|---|
 | `<name>` | The client's name, for example `kitchen-light`. It must be unique, must not be empty, and must not contain `/ = : ,`. |
 | `<type>` | `ACTUATOR`, `SENSOR` or `CONTROLLER`. |
-| `<role>` | Only for a controller: `OWNER`, `USER` or `GUEST`, as in `HELLO:anna-phone,CONTROLLER,OWNER`. The server records it, but does not check it yet (section 15). |
+| `<kind>` | Optional, only for an actuator or sensor: what exactly the device is, as the name of its class in UpperCamelCase, for example `Light`, `Fan`, `DoorLock` or `TemperatureSensor` (`Device.getKind()`). The server remembers it, also while the device is offline, and passes it on in `DEVICE-ADDED`, so controllers know what a device is before it has sent any state. Must match `DeviceType.isValidKind`: names in capitals only, such as `OWNER`, are refused. |
+| `<role>` | Only for a controller, in place of the kind: `OWNER`, `USER` or `GUEST`, as in `HELLO:anna-phone,CONTROLLER,OWNER`. The server records it, but does not check it yet (section 15). |
 
 The id is the client's address (`CH<id>`). Every new connection is given the next free id (1, 2, 3, …), and a new name keeps that id. **A name that has been used before gets its old id back instead**, so a client that reconnects keeps its registration, its rooms, its automations and its subscribers.
 
@@ -279,14 +280,14 @@ Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<
 
 | Constant | Format | Kind | What the server does | Answer |
 |---|---|---|---|---|
-| `HELLO` | `HELLO:<name>,<type>[,<role>]` | request | Records who the client is, and gives it its id: the same id as before if the name has been used before (section 1). | `WELCOME:<id>` to the sender |
+| `HELLO` | `HELLO:<name>,<type>[,<kind>]` or `HELLO:<name>,CONTROLLER,<role>` | request | Records who the client is, and gives it its id: the same id as before if the name has been used before (section 1). | `WELCOME:<id>` to the sender |
 | `PING` | `PING` | request | Nothing. | `PONG` to the sender |
 | `STATE` | `STATE:<property>,<value>` | request | Stores the device's value, sends it to the device's subscribers, and, if it is a number, fires every automation whose condition it makes true (sections 7 and 12). Sent by devices. | `<property>:<value>` to every subscriber |
 | `SUBSCRIBE` | `SUBSCRIBE:<deviceId>` | request | Subscribes the sender to a registered device (section 7). | The device's stored state, to the sender |
 | `UNSUBSCRIBE` | `UNSUBSCRIBE:<deviceId>` | request | Unsubscribes the sender from the device. | - |
-| `DEVICE_ADD` | `DEVICE-ADD:<id>` | request | Registers connected client `<id>` as a device in the home. Fails if the client is not connected, is already registered, or is the sender itself. | `DEVICE-ADDED:<id>,<name>,ONLINE` to **everyone** |
+| `DEVICE_ADD` | `DEVICE-ADD:<id>` | request | Registers connected client `<id>` as a device in the home. Fails if the client is not connected, is already registered, or is the sender itself. | `DEVICE-ADDED:<id>,<name>,ONLINE[,<kind>]` to **everyone** |
 | `DEVICE_REMOVE` | `DEVICE-REMOVE:<id>` | request | Unregisters the device, takes it out of every room, removes every subscription to it, and removes every automation that uses it. | `ROOM-REMOVED:<room>,<id>` for each room, `AUTOMATION-REMOVED:<id>` for each automation, then `DEVICE-REMOVED:<id>`, to **everyone** |
-| `DEVICE_LIST` | `DEVICE-LIST` | request | - | One `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>` per registered device, to the sender |
+| `DEVICE_LIST` | `DEVICE-LIST` | request | - | One `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>[,<kind>]` per registered device, to the sender |
 | `ROOM_CREATE` | `ROOM-CREATE:<name>` | request | Creates an empty room called `<name>`. The **server chooses the room's id**. The name is trimmed and must not be blank or contain `/`, `=` or line breaks. | `ROOM-CREATED:<room>,<name>` to **everyone** |
 | `ROOM_RENAME` | `ROOM-RENAME:<room>,<name>` | request | Sets or changes the name of an existing room. Everything after the first comma is the name, with the same rules as `ROOM-CREATE`. | `ROOM-RENAMED:<room>,<name>` to **everyone** |
 | `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room (without a name) if needed. | `ROOM-ADDED:<room>,<id>` to **everyone** |
@@ -367,7 +368,7 @@ These are all replies, so a receiver never answers them. The one exception is `P
 | `REPLACED` | `REPLACED` | the old connection | A newer connection introduced itself with the same name; this one is closed. The client must not reconnect. |
 | `PING` | `PING` | every client, every 5 s | A request, not a reply: answer with `PONG` (section 1). |
 | `PONG` | `PONG` | sender | Answer to `PING`. |
-| `DEVICE_ADDED` | `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>` | everyone, or the sender after `DEVICE-LIST` | Client `<id>`, called `<name>`, is a registered device, and is connected or not. |
+| `DEVICE_ADDED` | `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>[,<kind>]` | everyone, or the sender after `DEVICE-LIST` | Client `<id>`, called `<name>`, is a registered device, and is connected or not. `<kind>`, for example `Fan`, is what the device said it is in `HELLO`; left out if it gave none. |
 | `DEVICE_ONLINE` | `DEVICE-ONLINE:<id>` | everyone | A registered device connected again. |
 | `DEVICE_OFFLINE` | `DEVICE-OFFLINE:<id>` | everyone | A registered device lost its connection. It stays registered. |
 | `DEVICE_REMOVED` | `DEVICE-REMOVED:<id>` | everyone | Device `<id>` was unregistered. |
@@ -430,7 +431,7 @@ server → 5   CH005/SE000/WELCOME:5/=
 5 → server   SE000/CH005/DEVICE-LIST/=
 5 → server   SE000/CH005/ROOM-LIST/=
 5 → server   SE000/CH005/AUTOMATION-LIST/=
-server → 5   CH005/SE000/DEVICE-ADDED:1,kitchen-light,ONLINE/=   (one per registered device)
+server → 5   CH005/SE000/DEVICE-ADDED:1,kitchen-light,ONLINE,Light/=   (one per registered device)
 server → 5   CH005/SE000/ROOM-ADDED:10,1/=   (one per client in a room)
 server → 5   CH005/SE000/AUTOMATION-ADDED:1,2,temperature,ABOVE,25.0,1,power:true/=   (one per automation)
 5 → 1        CH001/CH005/GET-COMMANDS/=      (for each new device)
@@ -447,7 +448,7 @@ server → 5   CH005/CH001/value:0/=
 
 ```
 3 → server   SE000/CH003/DEVICE-ADD:1/=
-server → all AL000/SE000/DEVICE-ADDED:1,kitchen-light,ONLINE/=
+server → all AL000/SE000/DEVICE-ADDED:1,kitchen-light,ONLINE,Light/=
 (every controller that did not know device 1 sends it GET-COMMANDS and the server SUBSCRIBE:1, as above)
 ```
 
