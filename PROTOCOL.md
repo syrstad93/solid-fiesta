@@ -292,6 +292,7 @@ Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<
 | `ROOM_RENAME` | `ROOM-RENAME:<room>,<name>` | request | Sets or changes the name of an existing room. Everything after the first comma is the name, with the same rules as `ROOM-CREATE`. | `ROOM-RENAMED:<room>,<name>` to **everyone** |
 | `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room (without a name) if needed. | `ROOM-ADDED:<room>,<id>` to **everyone** |
 | `ROOM_REMOVE` | `ROOM-REMOVE:<room>,<id>` | request | Takes client `<id>` out of the room. A room that becomes empty is deleted, unless it has a name. | `ROOM-REMOVED:<room>,<id>` to **everyone** |
+| `ROOM_DELETE` | `ROOM-DELETE:<room>` | request | Deletes the room, named or not, even if devices are in it. The devices stay registered; they are only no longer in the room. Fails if the room does not exist. | `ROOM-DELETED:<room>` to **everyone** |
 | `ROOM_LIST` | `ROOM-LIST` | request | - | One `ROOM-CREATED:<room>,<name>` per named room, then one `ROOM-ADDED:<room>,<id>` per client in each room, to the sender |
 | `AUTOMATION_ADD` | `AUTOMATION-ADD:<sensor>,<reading>,<ABOVE\|BELOW>,<threshold>,<device>,<command>` | request | Adds an automation (section 12). Both the sensor and the device must be registered. | `AUTOMATION-ADDED:<id>,…` to **everyone** |
 | `AUTOMATION_REMOVE` | `AUTOMATION-REMOVE:<id>` | request | Removes an automation. | `AUTOMATION-REMOVED:<id>` to **everyone** |
@@ -376,6 +377,7 @@ These are all replies, so a receiver never answers them. The one exception is `P
 | `ROOM_RENAMED` | `ROOM-RENAMED:<room>,<name>` | everyone | Room `<room>` is now called `<name>`. |
 | `ROOM_ADDED` | `ROOM-ADDED:<room>,<id>` | everyone, or the sender after `ROOM-LIST` | Client `<id>` is in room `<room>`. |
 | `ROOM_REMOVED` | `ROOM-REMOVED:<room>,<id>` | everyone | Client `<id>` left room `<room>`. |
+| `ROOM_DELETED` | `ROOM-DELETED:<room>` | everyone | Room `<room>` was deleted, with its name and everything in it. No `ROOM-REMOVED` is sent for the clients that were in it. |
 | `ROOM_CLIENTS` | `ROOM-CLIENTS:<id>,<id>,…` | sender | The clients in a room; the value is empty for an empty room. Comes from `RO<room>`. |
 | *(state)* | `<property>:<value>`, from `CH<device>` | subscribers | One property of a device's state, for example `CH005/CH001/powerOn:true/=` (section 7). |
 | `AUTOMATION_ADDED` | `AUTOMATION-ADDED:<id>,<sensor>,<reading>,<condition>,<threshold>,<device>,<command>` | everyone, or the sender after `AUTOMATION-LIST` | An automation exists. |
@@ -412,7 +414,7 @@ A `Controller` gets a `Role` when it is created. The role cannot be changed afte
 |---|---|:-:|:-:|:-:|
 | See devices, their commands and state, rooms and automations | `DEVICE-LIST`, `ROOM-LIST`, `AUTOMATION-LIST`, `GET-COMMANDS`, `SUBSCRIBE`, `UNSUBSCRIBE` | ✓ | ✓ | ✓ |
 | Control devices | device commands such as `power:true` | ✓ | ✓ | ✓ |
-| Create and rename rooms, put devices in rooms and take them out | `ROOM-CREATE`, `ROOM-RENAME`, `ROOM-ADD`, `ROOM-REMOVE` | | ✓ | ✓ |
+| Create, rename and delete rooms, put devices in rooms and take them out | `ROOM-CREATE`, `ROOM-RENAME`, `ROOM-DELETE`, `ROOM-ADD`, `ROOM-REMOVE` | | ✓ | ✓ |
 | Add and remove automations | `AUTOMATION-ADD`, `AUTOMATION-REMOVE` | | ✓ | ✓ |
 | Add and remove devices | `DEVICE-ADD`, `DEVICE-REMOVE` | | | ✓ |
 
