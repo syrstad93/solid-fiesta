@@ -13,6 +13,10 @@ import java.nio.charset.StandardCharsets;
 /**
  * Handles a {@link Socket} connection to a remote client.
  * This includes input/output streams and data interchange with the client.
+ *
+ * <p>AI declaration: This class is heavily inspired by the solution of assignment 3 in this course.
+ * In assignment 3, AI did assist in suggesting and explaining the implementation of this class,
+ * but AI was not used for the changes in this class in this project.
  */
 public class ClientHandler implements Runnable {
 
