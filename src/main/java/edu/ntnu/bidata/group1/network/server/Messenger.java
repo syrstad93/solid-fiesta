@@ -6,6 +6,10 @@ package edu.ntnu.bidata.group1.network.server;
  * <p>The server implements it to receive messages from its {@link ClientHandler}s, and every
  * device implements it to receive messages from its connection to the server.
  *
+ * <p>AI declaration: This interface is heavily inspired by the solution of assignment 3 in this
+ * course, where AI provided assistance. However, AI was not used for this specific project's
+ * implementation of this interface.
+ *
  * @param <MessageT> is the datatype of the messages being sent.
  * @param <ClientT> is the datatype of the client sending messages.
  */
