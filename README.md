@@ -105,3 +105,10 @@ The project directory 'doc' contains the following files:
 - **Component Diagrams**: Component diagrams showing the high-level structure of the system and how different components interact with each other.
 - **Topology Illustration**: A visual representation of the network topology used in the smart home automation system.
 
+## AI Disclaimer
+
+This project was developed with the assistance of AI tools, including ChatGPT and GitHub Copilot,
+which provided guidance and suggestions during the development process.
+While AI tools were used to enhance productivity and provide insights,
+the final implementation and decisions were made by the group members.
+The group members take full responsibility for the content and functionality of the project.
