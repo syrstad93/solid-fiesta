@@ -44,12 +44,12 @@ This allows for efficient communication and centralized control of the smart hom
 
 This project uses ***Java*** with the following dependencies:
 
-| Package           | Version           |
-|---        |---        |
-| Java      | 25        |
-| Javafx    | 25.0.1    |
-| Maven     | 25        |
-| Junit     | 5.10.2    |
+| Package | Version           |
+|---------|---        |
+| Java    | 25        |
+| JavaFX  | 25.0.1    |
+| Maven   | 25        |
+| JUnit   | 5.10.2    |
 
 ## How to run the application
 
@@ -66,6 +66,9 @@ The _server_ can be started from: [Main.java](src/main/java/edu/ntnu/bidata/grou
 Running the control panel also from: [Launcher.java](src/main/java/edu/ntnu/bidata/group1/gui/Launcher.java).
 
 Note: The class Launcher can be found in the package `edu.ntnu.bidata.group1.gui` and is used to launch the GUI application.
+It is not necessary to run the server separately, as there is an option on the front page
+of the GUI to start the server in demo mode. This will automatically create example
+devices and a room for testing purposes.
 
 ## Protocol
 
@@ -88,6 +91,13 @@ The project is organized into the following main packages:
 ## Testing
 
 The project includes unit tests for various components, ensuring the correctness and reliability of the system.
+
+Tests can be run using the following Maven command:
+````bash
+mvn test
+````
+
+The tests cover different aspects of the application, including device management, automation logic, and network communication.
 
 The application has also been user tested by the group members,
 and feedback has been collected to improve the user experience and functionality of the system.
