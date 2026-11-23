@@ -1,7 +1,7 @@
 package edu.ntnu.bidata.group1.utility;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.Test;
 
 /**
@@ -15,5 +15,21 @@ class ConditionTest {
   @Test
   void aboveReturnsTrueWhenValueIsGreaterThanThreshold() {
     assertTrue(Condition.ABOVE.isMet(26.0, 25.0));
+  }
+
+  /**
+   * Tests that ABOVE is not met when the value is less than the threshold.
+   */
+  @Test
+  void aboveReturnsFalseWhenValueIsLessThanThreshold() {
+    assertFalse(Condition.ABOVE.isMet(24.0, 25.0));
+  }
+
+  /**
+   * Tests that ABOVE is not met when the value equals the threshold.
+   */
+  @Test
+  void aboveReturnsFalseWhenValueEqualsThreshold() {
+    assertFalse(Condition.ABOVE.isMet(25.0, 25.0));
   }
 }
