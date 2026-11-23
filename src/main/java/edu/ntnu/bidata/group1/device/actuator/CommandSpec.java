@@ -201,6 +201,8 @@ public final class CommandSpec {
   /**
    * Reads a specification from the string produced by {@link #toMessageValue()}.
    *
+   * <p>AI DECLARATION: this method was created with help from AI.
+   *
    * @param value the string received in a message
    * @return the command specification
    * @throws IllegalArgumentException if the string is not a valid specification

@@ -70,6 +70,8 @@ class PendingRequests {
    * }</pre>
    * What a reply is about is worked out by {@link #aboutOf(Protocol, String)}.
    *
+   * <p> AI DECLARATION: this method is created with help from AI.
+   *
    * @param request the request that was sent, for example {@link Protocol#DEVICE_ADD}; an
    *     {@code ERROR} for this key fails the request
    * @param reply the reply that confirms the request, for example {@link Protocol#DEVICE_ADDED}

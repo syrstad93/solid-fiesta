@@ -23,7 +23,9 @@ public enum DeviceType {
   /** A device that controls other devices. */
   CONTROLLER;
 
-  /** UpperCamelCase with at least one lower-case letter, like a Java class name. */
+  /** UpperCamelCase with at least one lower-case letter, like a Java class name.
+   * <p>AI DECLARATION: this method was created with help from AI.
+   */
   private static final Pattern KIND = Pattern.compile("[A-Z][A-Za-z0-9]*[a-z][A-Za-z0-9]*");
 
   /**
