@@ -4,27 +4,57 @@ This document describes every message that the server and its clients (actuators
 
 ## Contents
 
-1. [Transport and connections](#1-transport-and-connections)
-2. [Message format](#2-message-format)
-3. [Addresses](#3-addresses)
-4. [The command part](#4-the-command-part)
-5. [Messages to a device](#5-messages-to-a-device)
-6. [Replies from a device](#6-replies-from-a-device)
-7. [State and subscriptions](#7-state-and-subscriptions)
-8. [Device-specific commands](#8-device-specific-commands)
-9. [Sensors](#9-sensors)
-10. [Messages to the server](#10-messages-to-the-server)
-11. [Messages to a room](#11-messages-to-a-room)
-12. [Automations](#12-automations)
-13. [Replies and broadcasts from the server](#13-replies-and-broadcasts-from-the-server)
-14. [Errors](#14-errors)
-15. [Controller roles](#15-controller-roles)
-16. [Example exchanges](#16-example-exchanges)
-17. [Rules and limitations](#17-rules-and-limitations)
+1. [Terminology](#1-terminology)
+2. [Transport and connections](#2-transport-and-connections)
+3. [Message format](#3-message-format)
+4. [Addresses](#4-addresses)
+5. [The command part](#5-the-command-part)
+6. [Messages to a device](#6-messages-to-a-device)
+7. [Replies from a device](#7-replies-from-a-device)
+8. [State and subscriptions](#8-state-and-subscriptions)
+9. [Device-specific commands](#9-device-specific-commands)
+10. [Sensors](#10-sensors)
+11. [Messages to the server](#11-messages-to-the-server)
+12. [Messages to a room](#12-messages-to-a-room)
+13. [Automations](#13-automations)
+14. [Replies and broadcasts from the server](#14-replies-and-broadcasts-from-the-server)
+15. [Errors](#15-errors)
+16. [Controller roles](#16-controller-roles)
+17. [Example exchanges](#17-example-exchanges)
+18. [Rules and limitations](#18-rules-and-limitations)
 
 ---
 
-## 1. Transport and connections
+## 1. Terminology
+
+- **Actuator**: a device that can be controlled, for example a light, a fan or a heater. It has commands and properties, and sends its state to the server when it changes.
+- **Sensor**: a device that measures something, for example temperature, humidity or whether a switch is on. It has no commands, only properties, and sends its state to the server when it changes.
+- **Controller**: a device that controls actuators and reads sensors. It has no commands, only properties, and subscribes to devices to get their state.
+- **Device**: a joint term for an actuator, sensor or controller. A device is registered with the server, has a name and an id, and can be put in rooms.
+- **Room**: a group of devices. A room has an id and optionally a name, and can be used to send the same command to every device in it.
+- **Automation**: a rule the server follows on its own: when a sensor's reading goes above or below a threshold, send a command to a device. Automations keep working when no controller is connected.
+- **State**: the properties of a device, for example `type`, `powerOn` or `temperature`. A device sends its state to the server, and the server sends it on to every client that has subscribed to the device.
+- **Subscription**: a client subscribes to a device to get its state. The server keeps track of every subscription, and sends the device's state to every subscriber whenever it changes.
+- **Message**: a line of text sent from one client to another, or from a client to the server, or from the server to a client. Every message has a destination, a source, a command and an end-of-message marker.
+- **Destination**: the address of the client or server that should receive a message. The destination is the first part of a message.
+- **Source**: the address of the client or server that sent a message. The source is the second part of a message. The server overwrites it with the sender's real address, so a client can write anything here.
+- **Command**: the third part of a message, telling the receiver what to do. It is either a protocol message (for example `DEVICE-ADD`) or a device command (for example `power:true`).
+- **Protocol message**: a command that every client and the server understand, for example `DEVICE-ADD`, `ROOM-ADDED` or `GET-COMMANDS`.
+- **Device command**: a command that only one device understands, for example `power:true` or `value:75`. A device command is defined by the device itself, and may not use a protocol message name.
+- **Request**: a message that asks the receiver to do something. A request is always answered, either with a reply or an error.
+- **Reply**: a message that answers a request. A reply is never answered, not even with an error.
+- **Broadcast**: a message sent to every connected client, for example `DEVICE-ADDED` or `ROOM-REMOVED`. A broadcast is always a reply, never a request.
+- **Error**: a message sent to the sender of a request when the server cannot carry it out. An error is never answered, not even with another error.
+- **Role**: a property of a controller, either `OWNER`, `USER` or `GUEST`. A controller's role is checked in the controller before it sends a message, but the server does not check it yet.
+- **ID**: a number that identifies a client or a room. A client id is assigned by the server when it connects, and a room id is assigned by the server when it is created. Ids are written with three digits in addresses, for example `CH001` or `RO010`, but are plain numbers inside commands, for example `ROOM-ADD:10,1`.
+- **Name**: a string that identifies a client or a room. A client name is given by the client itself, and must be unique. A room name is given by the server when it is created, and may be changed later.
+- **Kind**: a string that describes what kind of device an actuator or sensor is, for example `Light`, `Fan`, `DoorLock` or `TemperatureSensor`. The server remembers it, also while the device is offline, and passes it on in `DEVICE-ADDED`, so controllers know what a device is before it has sent any state.
+- **UniversallyAvailableInformation**: a class that contains constants for the server's address, port number and localhost address.
+- **UpperCamelCase**: a style of writing names where every word starts with a capital letter, for example `TemperatureSensor` or `DoorLock`. Used for device kinds.
+- **Lower case**: a style of writing names where every word starts with a lower case letter, for example `powerOn` or `targetTemperature`. Used for device commands and properties.
+- **Upper case**: a style of writing names where every letter is capitalized, for example `DEVICE-ADD` or `ROOM-ADDED`. Used for protocol messages.
+
+## 2. Transport and connections
 
 | | |
 |---|---|
@@ -76,7 +106,7 @@ When a client's connection is lost, what the server does depends on whether the 
 | Subscriptions it holds, its stored state | Removed; it subscribes and sends its state again when it reconnects | Removed |
 | Broadcast | `DEVICE-OFFLINE:<id>` if it is a registered device, and `DEVICE-ONLINE:<id>` when it reconnects | `ROOM-REMOVED:<room>,<id>` for each room it was in; if it was a registered device, also `AUTOMATION-REMOVED:<id>` for each of its automations, then `DEVICE-REMOVED:<id>` |
 
-## 2. Message format
+## 3. Message format
 
 Every message has four parts separated by `/`:
 
@@ -104,7 +134,7 @@ CH001/CH000/value:75/=   (sent by client 3)
 CH001/CH003/value:75/=   (what client 1 receives: the server filled in the source)
 ```
 
-## 3. Addresses
+## 4. Addresses
 
 | Address | Meaning | Constant |
 |---|---|---|
@@ -117,7 +147,7 @@ Ids in an address are written with **three digits**, padded with leading zeros: 
 
 When reading a message, any number of digits is accepted, so `CH1`, `CH01` and `CH001` all mean client 1. Ids **inside** a command are plain numbers, not addresses, so they are not padded: `ROOM-ADD:10,1` puts client 1 in room 10.
 
-## 4. The command part
+## 5. The command part
 
 The command part is either a **key** (`DEVICE-LIST`) or a **key and a value** separated by the first `:` (`value:75`). Everything after the first `:` belongs to the value, so the value may itself contain `:` (see `ROOM-BROADCAST:power:false` below).
 
@@ -146,7 +176,7 @@ A device command may not reuse a protocol key in **any** letter case, so `error`
 
 Every protocol message is either a **request**, which asks the receiver to do something, or a **reply**, which answers or announces something. **Replies are never answered**, not even with an error. That rule keeps two clients from sending errors back and forth forever.
 
-## 5. Messages to a device
+## 6. Messages to a device
 
 Sent to `CH<id>`, usually by a controller. Actuators and sensors both understand these.
 
@@ -158,7 +188,7 @@ Sent to `CH<id>`, usually by a controller. Actuators and sensors both understand
 
 A device's state is not asked for from the device itself: it goes through the server, to the clients that have subscribed to the device (section 7).
 
-## 6. Replies from a device
+## 7. Replies from a device
 
 | Constant | Format | Kind | Meaning |
 |---|---|---|---|
@@ -170,7 +200,7 @@ When an actuator starts, it broadcasts its commands to `AL000` without being ask
 
 After carrying out a valid command, an actuator does not reply to the sender. Instead it sends every property that changed to the server, which passes it on to all subscribers (section 7), so the sender sees the result like every other controller.
 
-## 7. State and subscriptions
+## 8. State and subscriptions
 
 A device's **state** is its properties, such as `type`, `powerOn` or `temperature`. Devices never send their state to other clients themselves. They send it to the server, and the server sends it on to every client that has **subscribed** to the device:
 
@@ -214,7 +244,7 @@ A subscription ends when:
 
 A device that introduced itself keeps its subscribers when its connection is lost: they get its state again once it reconnects and sends it.
 
-## 8. Device-specific commands
+## 9. Device-specific commands
 
 Each actuator declares the commands it accepts as a `CommandSpec`. A spec has a name, a parameter type, and a range or list of options. The device announces each one as `COMMAND:<spec>`, using this format:
 
@@ -254,7 +284,7 @@ The heater is simulated: turning it on does not change what a `TemperatureSensor
 
 A command without a parameter is sent as its name alone, for example `CH006/CH005/unlock/=`.
 
-## 9. Sensors
+## 10. Sensors
 
 A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 7). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
 
@@ -274,7 +304,7 @@ For demos and tests, `setTemperature(…)` and `setHumidity(…)` jump straight 
 
 Because a switch reports a number, it drives automations like any other sensor. Use a threshold between 0 and 1: `on ABOVE 0.5` fires when the switch is turned on, and `on BELOW 0.5` fires when it is turned off. For example, `AUTOMATION-ADD:5,on,ABOVE,0.5,1,power:true` and `AUTOMATION-ADD:5,on,BELOW,0.5,1,power:false` make switch 5 control light 1.
 
-## 10. Messages to the server
+## 11. Messages to the server
 
 Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<request>,<reason>` (section 14).
 
@@ -298,7 +328,7 @@ Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<
 | `AUTOMATION_REMOVE` | `AUTOMATION-REMOVE:<id>` | request | Removes an automation. | `AUTOMATION-REMOVED:<id>` to **everyone** |
 | `AUTOMATION_LIST` | `AUTOMATION-LIST` | request | - | One `AUTOMATION-ADDED:<id>,…` per automation, to the sender |
 
-## 11. Messages to a room
+## 12. Messages to a room
 
 Sent to `RO<id>`. The room must already exist (create it with `ROOM-CREATE` or `ROOM-ADD`), otherwise the server answers with an error.
 
@@ -311,7 +341,7 @@ Sent to `RO<id>`. The room must already exist (create it with `ROOM-CREATE` or `
 
 Example: `RO010/CH000/ROOM-BROADCAST:power:false/=` turns off every light in room 10.
 
-## 12. Automations
+## 13. Automations
 
 An automation is a rule the **server** follows on its own: *when a sensor's reading goes above or below a threshold, send a command to a device.* Automations keep working when no controller is connected.
 
@@ -359,7 +389,7 @@ To switch something back, add a second automation with the opposite condition, f
 - The **server** checks the format, that the sensor and the device are registered, and that the command is a device command and not a protocol message.
 - When a device is unregistered with `DEVICE-REMOVE`, every automation that uses it is removed too.
 
-## 13. Replies and broadcasts from the server
+## 14. Replies and broadcasts from the server
 
 These are all replies, so a receiver never answers them. The one exception is `PING`, a request the server sends to check that a client is still there, which every client answers with `PONG`. Messages marked **everyone** are sent to `AL000`, so every client, whatever its role, sees the same devices and rooms.
 
@@ -385,7 +415,7 @@ These are all replies, so a receiver never answers them. The one exception is `P
 | `AUTOMATION_TRIGGERED` | `AUTOMATION-TRIGGERED:<id>,<value>` | everyone | An automation fired because its sensor reported `<value>`. |
 | `ERROR` | `ERROR:<request>,<reason>` | sender | See below. |
 
-## 14. Errors
+## 15. Errors
 
 When the server cannot handle a message, it replies to the sender with:
 
@@ -406,7 +436,7 @@ A device that rejects a command replies the same way, but from its own address, 
 
 Any `/` or line break in a reason is replaced with a space, so the reply is always a valid message.
 
-## 15. Controller roles
+## 16. Controller roles
 
 A `Controller` gets a `Role` when it is created. The role cannot be changed afterwards.
 
@@ -420,7 +450,7 @@ A `Controller` gets a `Role` when it is created. The role cannot be changed afte
 
 The role is checked **in the controller**, before a message is sent. A controller also gives its role in `HELLO` (section 1), so the server knows it, but the server does not check it yet (see section 17).
 
-## 16. Example exchanges
+## 17. Example exchanges
 
 In these examples, client 1 is a `Light`, client 3 is an owner controller, and client 5 is a guest controller. Messages are shown as they arrive, after the server has filled in the source.
 
@@ -493,7 +523,7 @@ server → 5   CH005/CH001/powerOn:true/=             (and to the other subscrib
 2 → server   SE000/CH002/STATE:temperature,25.4/=   (still above: does not fire again)
 ```
 
-## 17. Rules and limitations
+## 18. Rules and limitations
 
 - **State is only sent when it changes.** The server keeps the latest value of every property, so a new subscriber gets the current state at once, without the device being asked.
 - **Replies are never answered.** A client that receives a reply it doesn't need ignores it silently. The server follows the same rule: an `ERROR` sent to the server is logged, not answered.
