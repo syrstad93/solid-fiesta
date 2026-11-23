@@ -24,7 +24,7 @@ This project uses ***Java*** with the following dependencies:
 
 **Compiling the project:**
 ````bash
-mvn run compile
+mvn compile
 ````
 
 **Running the application:**
