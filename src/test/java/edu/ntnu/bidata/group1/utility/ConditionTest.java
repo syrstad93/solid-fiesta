@@ -32,4 +32,28 @@ class ConditionTest {
   void aboveReturnsFalseWhenValueEqualsThreshold() {
     assertFalse(Condition.ABOVE.isMet(25.0, 25.0));
   }
+
+  /**
+   * Tests that BELOW is met when the value is less than the threshold.
+   */
+  @Test
+  void belowReturnsTrueWhenValueIsLessThanThreshold() {
+    assertTrue(Condition.BELOW.isMet(24.0, 25.0));
+  }
+
+  /**
+   * Tests that BELOW is not met when the value is greater than the threshold.
+   */
+  @Test
+  void belowReturnsFalseWhenValueIsGreaterThanThreshold() {
+    assertFalse(Condition.BELOW.isMet(26.0, 25.0));
+  }
+
+  /**
+   * Tests that BELOW is not met when the value equals the threshold.
+   */
+  @Test
+  void belowReturnsFalseWhenValueEqualsThreshold() {
+    assertFalse(Condition.BELOW.isMet(25.0, 25.0));
+  }
 }
