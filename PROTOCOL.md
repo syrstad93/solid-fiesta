@@ -1,38 +1,76 @@
-# Smart home protocol
+# Smart Home Protocol
 
-This document describes every message that the server and its clients (actuators, sensors and controllers) exchange. The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntnu/bidata/group1/utility/Protocol.java). If you add or change a message, update both.
+This document describes the Smart Home protocol, including the system architecture, the communication rules, the formating of the messages, error handling and reliability mechanisms.
+
+The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntnu/bidata/group1/utility/Protocol.java). If you add or change a message, update both.
 
 ## Contents
 
-1. [Transport and connections](#1-transport-and-connections)
-2. [Message format](#2-message-format)
-3. [Addresses](#3-addresses)
-4. [The command part](#4-the-command-part)
-5. [Messages to a device](#5-messages-to-a-device)
-6. [Replies from a device](#6-replies-from-a-device)
-7. [State and subscriptions](#7-state-and-subscriptions)
-8. [Device-specific commands](#8-device-specific-commands)
-9. [Sensors](#9-sensors)
-10. [Messages to the server](#10-messages-to-the-server)
-11. [Messages to a room](#11-messages-to-a-room)
-12. [Automations](#12-automations)
-13. [Replies and broadcasts from the server](#13-replies-and-broadcasts-from-the-server)
-14. [Errors](#14-errors)
-15. [Controller roles](#15-controller-roles)
-16. [Example exchanges](#16-example-exchanges)
-17. [Rules and limitations](#17-rules-and-limitations)
+1. [Terminology](#1-terminology)
+2. [Transport and connections](#2-transport-and-connections)
+3. [Message format](#3-message-format)
+4. [Addresses](#4-addresses)
+5. [The command part](#5-the-command-part)
+6. [Messages to a device](#6-messages-to-a-device)
+7. [Replies from a device](#7-replies-from-a-device)
+8. [State and subscriptions](#8-state-and-subscriptions)
+9. [Device-specific commands](#9-device-specific-commands)
+10. [Sensors](#10-sensors)
+11. [Messages to the server](#11-messages-to-the-server)
+12. [Messages to a room](#12-messages-to-a-room)
+13. [Automations](#13-automations)
+14. [Replies and broadcasts from the server](#14-replies-and-broadcasts-from-the-server)
+15. [Errors](#15-errors)
+16. [Controller roles](#16-controller-roles)
+17. [Example exchanges](#17-example-exchanges)
+18. [Rules and limitations](#18-rules-and-limitations)
 
 ---
 
-## 1. Transport and connections
+## 1. Terminology
 
-| | |
-|---|---|
-| Protocol | TCP |
-| Address | `127.0.0.1` (`UniversallyAvailableInformation.LOCALHOST`) |
-| Port | `1238` (`UniversallyAvailableInformation.PORT_NUMBER`) |
-| Framing | One message per line, UTF-8, ending in a line break |
+- **Actuator**: a device that can be controlled, for example a light, a fan or a heater. It has commands and properties, and sends its state to the server when it changes.
+- **Sensor**: a device that measures something, for example temperature, humidity or whether a switch is on. It has no commands, only properties, and sends its state to the server when it changes.
+- **Controller**: a device that controls actuators and reads sensors. It has no commands, only properties, and subscribes to devices to get their state.
+- **Device**: a joint term for an actuator, sensor or controller. A device is registered with the server, has a name and an id, and can be put in rooms.
+- **Room**: a group of devices. A room has an id and optionally a name, and can be used to send the same command to every device in it.
+- **Automation**: a rule the server follows on its own: when a sensor's reading goes above or below a threshold, send a command to a device. Automations keep working when no controller is connected.
+- **State**: the properties of a device, for example `type`, `powerOn` or `temperature`. A device sends its state to the server, and the server sends it on to every client that has subscribed to the device.
+- **Subscription**: a client subscribes to a device to get its state. The server keeps track of every subscription, and sends the device's state to every subscriber whenever it changes.
+- **Message**: a line of text sent from one client to another, or from a client to the server, or from the server to a client. Every message has a destination, a source, a command and an end-of-message marker.
+- **Destination**: the address of the client or server that should receive a message. The destination is the first part of a message.
+- **Source**: the address of the client or server that sent a message. The source is the second part of a message. The server overwrites it with the sender's real address, so a client can write anything here.
+- **Command**: the third part of a message, telling the receiver what to do. It is either a protocol message (for example `DEVICE-ADD`) or a device command (for example `power:true`).
+- **Protocol message**: a command that every client and the server understand, for example `DEVICE-ADD`, `ROOM-ADDED` or `GET-COMMANDS`.
+- **Device command**: a command that only one device understands, for example `power:true` or `value:75`. A device command is defined by the device itself, and may not use a protocol message name.
+- **Request**: a message that asks the receiver to do something. A request is always answered, either with a reply or an error.
+- **Reply**: a message that answers a request. A reply is never answered, not even with an error.
+- **Broadcast**: a message sent to every connected client, for example `DEVICE-ADDED` or `ROOM-REMOVED`. A broadcast is always a reply, never a request.
+- **Error**: a message sent to the sender of a request when the server cannot carry it out. An error is never answered, not even with another error.
+- **Role**: a property of a controller, either `OWNER`, `USER` or `GUEST`. A controller's role is checked in the controller before it sends a message, but the server does not check it yet.
+- **ID**: a number that identifies a client or a room. A client id is assigned by the server when it connects, and a room id is assigned by the server when it is created. Ids are written with three digits in addresses, for example `CH001` or `RO010`, but are plain numbers inside commands, for example `ROOM-ADD:10,1`.
+- **Name**: a string that identifies a client or a room. A client name is given by the client itself, and must be unique. A room name is given by the server when it is created, and may be changed later.
+- **Kind**: a string that describes what kind of device an actuator or sensor is, for example `Light`, `Fan`, `DoorLock` or `TemperatureSensor`. The server remembers it, also while the device is offline, and passes it on in `DEVICE-ADDED`, so controllers know what a device is before it has sent any state.
+- **UniversallyAvailableInformation**: a class that contains constants for the server's address, port number and localhost address.
+- **UpperCamelCase**: a style of writing names where every word starts with a capital letter, for example `TemperatureSensor` or `DoorLock`. Used for device kinds.
+- **Lower case**: a style of writing names where every word starts with a lower case letter, for example `powerOn` or `targetTemperature`. Used for device commands and properties.
+- **Upper case**: a style of writing names where every letter is capitalized, for example `DEVICE-ADD` or `ROOM-ADDED`. Used for protocol messages.
+
+## 2. Transport and connections
+
+| |                                                                                             |
+|---|---------------------------------------------------------------------------------------------|
+| Protocol | TCP                                                                                         |
+| Address | `127.0.0.1` (`UniversallyAvailableInformation.LOCALHOST`)                                   |
+| Port | `1238` (`UniversallyAvailableInformation.PORT_NUMBER`)                                      |
+| Framing | One message per line, UTF-8, ending with an equal sign (=)                                  |
 | Topology | Star: every client connects to the server, and the server forwards messages between clients |
+
+TCP is used because of its reliability: messages arrive in order, without loss or duplication, as long as the connection remains active. Messages ends with (=) to signify a complete message, which protects against disconnections of the TCP transmission. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
+
+TCP is inherently connection-oriented, so a client must connect to the server before it can send or receive messages. A client that disconnects loses its connection and must reconnect to continue.
+
+When a client disconnects, some of its information is kept, and some is removed, depending on whether it introduced itself with `HELLO` (section 11). Clients that have introduced themselves will retain their identity and registration, and will get their old id back when they reconnect. Clients that have not introduced themselves will lose everything when they disconnect.
 
 ### Connecting: `HELLO` and `WELCOME`
 
@@ -43,12 +81,12 @@ client → server   SE000/CH000/HELLO:kitchen-light,ACTUATOR,Light/=
 server → client   CH001/SE000/WELCOME:1/=
 ```
 
-| Part of `HELLO` | Meaning |
-|---|---|
-| `<name>` | The client's name, for example `kitchen-light`. It must be unique, must not be empty, and must not contain `/ = : ,`. |
-| `<type>` | `ACTUATOR`, `SENSOR` or `CONTROLLER`. |
+| Part of `HELLO` | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `<name>` | The client's name, for example `kitchen-light`. It must be unique, must not be empty, and must not contain `/ = : ,`.                                                                                                                                                                                                                                                                                                                                              |
+| `<type>` | `ACTUATOR`, `SENSOR` or `CONTROLLER`.                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `<kind>` | Optional, only for an actuator or sensor: what exactly the device is, as the name of its class in UpperCamelCase, for example `Light`, `Fan`, `DoorLock` or `TemperatureSensor` (`Device.getKind()`). The server remembers it, also while the device is offline, and passes it on in `DEVICE-ADDED`, so controllers know what a device is before it has sent any state. Must match `DeviceType.isValidKind`: names in capitals only, such as `OWNER`, are refused. |
-| `<role>` | Only for a controller, in place of the kind: `OWNER`, `USER` or `GUEST`, as in `HELLO:anna-phone,CONTROLLER,OWNER`. The server records it, but does not check it yet (section 15). |
+| `<role>` | Only for a controller, in place of the kind: `OWNER`, `USER` or `GUEST`, as in `HELLO:anna-phone,CONTROLLER,OWNER`. The server records it, but does not check it yet (section 16).                                                                                                                                                                                                                                                                                 |
 
 The id is the client's address (`CH<id>`). Every new connection is given the next free id (1, 2, 3, …), and a new name keeps that id. **A name that has been used before gets its old id back instead**, so a client that reconnects keeps its registration, its rooms, its automations and its subscribers.
 
@@ -69,14 +107,16 @@ This finds connections that died without either side noticing, for example after
 
 When a client's connection is lost, what the server does depends on whether the client introduced itself:
 
-| | Client with a name | Client without a name |
-|---|---|---|
-| Registration, rooms, automations | Kept | Removed, as with `DEVICE-REMOVE` (section 10) |
-| Subscriptions to it | Kept | Removed |
-| Subscriptions it holds, its stored state | Removed; it subscribes and sends its state again when it reconnects | Removed |
+| | Client with a name | Client without a name                                                                                                                                                     |
+|---|---|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Registration, rooms, automations | Kept | Removed, as with `DEVICE-REMOVE` (section 12)                                                                                                                             |
+| Subscriptions to it | Kept | Removed                                                                                                                                                                   |
+| Subscriptions it holds, its stored state | Removed; it subscribes and sends its state again when it reconnects | Removed                                                                                                                                                                   |
 | Broadcast | `DEVICE-OFFLINE:<id>` if it is a registered device, and `DEVICE-ONLINE:<id>` when it reconnects | `ROOM-REMOVED:<room>,<id>` for each room it was in; if it was a registered device, also `AUTOMATION-REMOVED:<id>` for each of its automations, then `DEVICE-REMOVED:<id>` |
 
-## 2. Message format
+The decision to implement a heartbeat and a timeout ensures that the server does not keep a dead connection open forever. However, to protect against temporary disconnections, the server keeps the registration, rooms, automations and subscriptions of a client that introduced itself with `HELLO`. When it reconnects, it gets its old id back, and can continue where it left off.
+
+## 3. Message format
 
 Every message has four parts separated by `/`:
 
@@ -104,7 +144,9 @@ CH001/CH000/value:75/=   (sent by client 3)
 CH001/CH003/value:75/=   (what client 1 receives: the server filled in the source)
 ```
 
-## 3. Addresses
+The message format was designed with destination, source and command, so that there's no need for any extra information in addition to the message in order to understand it in full. In some instances, additional information is still passed together with the message anyway, but this is for other concerns than providing information out of necessity.
+
+## 4. Addresses
 
 | Address | Meaning | Constant |
 |---|---|---|
@@ -117,14 +159,14 @@ Ids in an address are written with **three digits**, padded with leading zeros: 
 
 When reading a message, any number of digits is accepted, so `CH1`, `CH01` and `CH001` all mean client 1. Ids **inside** a command are plain numbers, not addresses, so they are not padded: `ROOM-ADD:10,1` puts client 1 in room 10.
 
-## 4. The command part
+## 5. The command part
 
 The command part is either a **key** (`DEVICE-LIST`) or a **key and a value** separated by the first `:` (`value:75`). Everything after the first `:` belongs to the value, so the value may itself contain `:` (see `ROOM-BROADCAST:power:false` below).
 
 There are two kinds of keys:
 
-- **Protocol messages**: the fixed set in sections 5-13, defined in the `Protocol` enum. Every client and the server understand them.
-- **Device-specific commands**: names such as `power` or `value`, chosen by each actuator (section 8). A device command may not use a protocol key.
+- **Protocol messages**: the fixed set in sections 6-14, defined in the `Protocol` enum. Every client and the server understand them.
+- **Device-specific commands**: names such as `power` or `value`, chosen by each actuator (section 9). A device command may not use a protocol key.
 
 ### Naming rule
 
@@ -146,31 +188,44 @@ A device command may not reuse a protocol key in **any** letter case, so `error`
 
 Every protocol message is either a **request**, which asks the receiver to do something, or a **reply**, which answers or announces something. **Replies are never answered**, not even with an error. That rule keeps two clients from sending errors back and forth forever.
 
-## 5. Messages to a device
+### Types and Special Values
 
-Sent to `CH<id>`, usually by a controller. Actuators and sensors both understand these.
+The table below lists the types and special values used in the protocol. They are used in messages, commands, and properties to indicate specific meanings or constraints.
 
-| Constant | Format | Kind | What the device does |
-|---|---|---|---|
+| Type                 | Values | Description |
+|----------------------|---|---|
+| Client type          | `ACTUATOR`, `SENSOR`, `CONTROLLER` | The kind of device, sent in `HELLO`. |
+| Controller role      | `OWNER`, `USER`, `GUEST` | The role of a controller, sent in `HELLO`. |
+| Property type        | `NONE`, `BOOLEAN`, `INTEGER`, `DECIMAL`, `ENUM` | The type of a device command or property, sent in `COMMAND:<spec>`. |
+| Automation condition | `ABOVE`, `BELOW` | Whether an automation fires when a sensor's reading goes above or below its threshold. |
+| Device state         | `ONLINE`, `OFFLINE` | Whether a device is connected or not, sent in `DEVICE-ADDED` and `DEVICE-OFFLINE`. |
+| Address prefix       | `CH`, `SE`, `RO`, `AL` | The first two letters of an address, for a client, the server, a room or all clients. |
+
+## 6. Messages to a device
+
+Sent to `CH<id>`, usually by a controller. Actuators and sensors are both able to interpret these, and will process the information if relevant to them. If not, they will ignore it.
+
+| Constant | Format | Kind | What the device does                                                                                                                    |
+|---|---|---|-----------------------------------------------------------------------------------------------------------------------------------------|
 | `COMMANDS_REQUEST` | `GET-COMMANDS` | request | Sends the sender one `COMMAND:<spec>` per command, then `COMMAND-END:<count>`. A sensor has no commands and only sends `COMMAND-END:0`. |
-| `PING` | `PING` | request | Answers `PONG`. The server sends it every 5 s (section 1). |
-| *(device command)* | `<name>:<argument>` | - | See [Device-specific commands](#8-device-specific-commands). |
+| `PING` | `PING` | request | Answers `PONG`. The server sends it every 5 s (section 2).                                                                              |
+| *(device command)* | `<name>:<argument>` | - | See [Device-specific commands](#8-device-specific-commands).                                                                            |
 
-A device's state is not asked for from the device itself: it goes through the server, to the clients that have subscribed to the device (section 7).
+A device's state is not asked for from the device itself: it goes through the server, to the clients that have subscribed to the device (section 8).
 
-## 6. Replies from a device
+## 7. Replies from a device
 
-| Constant | Format | Kind | Meaning |
-|---|---|---|---|
-| `COMMAND` | `COMMAND:<spec>` | reply | One command the device accepts. `<spec>` is described in section 8. |
-| `COMMAND_END` | `COMMAND-END:<count>` | reply | All `<count>` commands have been sent. |
+| Constant | Format | Kind | Meaning                                                                                   |
+|---|---|---|-------------------------------------------------------------------------------------------|
+| `COMMAND` | `COMMAND:<spec>` | reply | One command the device accepts. `<spec>` is described in section 9.                       |
+| `COMMAND_END` | `COMMAND-END:<count>` | reply | All `<count>` commands have been sent.                                                    |
 | `ERROR` | `ERROR:<command>,<reason>` | reply | The device rejected a command, for example `ERROR:value,value must be between 0 and 100`. |
 
-When an actuator starts, it broadcasts its commands to `AL000` without being asked.
+When an actuator starts, it broadcasts its commands to `AL000` without being asked. This provides clients like controllers with the information they need to control the actuator, without having to ask for it. A sensor has no commands, so it only sends `COMMAND-END:0`.
 
-After carrying out a valid command, an actuator does not reply to the sender. Instead it sends every property that changed to the server, which passes it on to all subscribers (section 7), so the sender sees the result like every other controller.
+After carrying out a valid command, an actuator does not reply to the sender. Instead, it sends every property that changed to the server, which passes it on to all subscribers (section 8), so the sender sees the result like every other controller.
 
-## 7. State and subscriptions
+## 8. State and subscriptions
 
 A device's **state** is its properties, such as `type`, `powerOn` or `temperature`. Devices never send their state to other clients themselves. They send it to the server, and the server sends it on to every client that has **subscribed** to the device:
 
@@ -204,7 +259,7 @@ For each `STATE` message, the server:
 | `SUBSCRIBE` | `SUBSCRIBE:<deviceId>` | `SE000` | Subscribes the sender to a registered device, and at once sends it the device's stored state, one `<property>:<value>` message per property. Subscribing again just sends the state again. |
 | `UNSUBSCRIBE` | `UNSUBSCRIBE:<deviceId>` | `SE000` | Stops sending the device's state to the sender. |
 
-A `Controller` subscribes by itself to every registered device it learns about, and subscribes again after a reconnect. It can also call `unsubscribe(deviceId)` and `subscribe(deviceId)`.
+A `Controller` subscribes by itself to every registered device it learns about, and subscribes again after a reconnect. It can also call `unsubscribe(deviceId)` and `subscribe(deviceId)`. This design provides flexibility for a controller that wants to subscribe only to some devices, or to unsubscribe from a device it no longer cares about.
 
 A subscription ends when:
 
@@ -214,7 +269,7 @@ A subscription ends when:
 
 A device that introduced itself keeps its subscribers when its connection is lost: they get its state again once it reconnects and sends it.
 
-## 8. Device-specific commands
+## 9. Device-specific commands
 
 Each actuator declares the commands it accepts as a `CommandSpec`. A spec has a name, a parameter type, and a range or list of options. The device announces each one as `COMMAND:<spec>`, using this format:
 
@@ -228,7 +283,7 @@ Each actuator declares the commands it accepts as a `CommandSpec`. A spec has a 
 
 Ranges include both ends. Names and options may not contain `/ = : , |`, and a name may not be a protocol key (for example `error` or `hello`, in any letter case).
 
-The controller checks every command against the spec **before sending it**, and the device checks it again when it arrives. A valid command is executed, and the device sends what changed to the server (section 7). An invalid one is answered with `ERROR:<command>,<reason>`.
+The controller checks every command against the spec **before sending it**, and the device checks it again when it arrives. A valid command is executed, and the device sends what changed to the server (section 9). An invalid one is answered with `ERROR:<command>,<reason>`.
 
 **Actuators in the project:**
 
@@ -254,11 +309,11 @@ The heater is simulated: turning it on does not change what a `TemperatureSensor
 
 A command without a parameter is sent as its name alone, for example `CH006/CH005/unlock/=`.
 
-## 9. Sensors
+## 10. Sensors
 
-A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 7). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
+A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 9). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
 
-Values are rounded to one decimal. Reading names should be lower case (the [naming rule](#naming-rule) for device properties), may not contain `/ = : ,`, and may not be a protocol key in any letter case.
+Values are rounded to one decimal. Reading names should be lowercase (the [naming rule](#naming-rule) for device properties), may not contain `/ = : ,`, and may not be a protocol key in any letter case.
 
 A sensor accepts **no commands**: it answers `GET-COMMANDS` with `COMMAND-END:0` and any device command with `ERROR:<command>,a sensor accepts no commands`. A controller can tell a sensor from an actuator by its `type:SENSOR` property.
 
@@ -274,48 +329,48 @@ For demos and tests, `setTemperature(…)` and `setHumidity(…)` jump straight 
 
 Because a switch reports a number, it drives automations like any other sensor. Use a threshold between 0 and 1: `on ABOVE 0.5` fires when the switch is turned on, and `on BELOW 0.5` fires when it is turned off. For example, `AUTOMATION-ADD:5,on,ABOVE,0.5,1,power:true` and `AUTOMATION-ADD:5,on,BELOW,0.5,1,power:false` make switch 5 control light 1.
 
-## 10. Messages to the server
+## 11. Messages to the server
 
-Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<request>,<reason>` (section 14).
+Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<request>,<reason>` (section 15).
 
-| Constant | Format | Kind | What the server does | Answer |
-|---|---|---|---|---|
-| `HELLO` | `HELLO:<name>,<type>[,<kind>]` or `HELLO:<name>,CONTROLLER,<role>` | request | Records who the client is, and gives it its id: the same id as before if the name has been used before (section 1). | `WELCOME:<id>` to the sender |
-| `PING` | `PING` | request | Nothing. | `PONG` to the sender |
-| `STATE` | `STATE:<property>,<value>` | request | Stores the device's value, sends it to the device's subscribers, and, if it is a number, fires every automation whose condition it makes true (sections 7 and 12). Sent by devices. | `<property>:<value>` to every subscriber |
-| `SUBSCRIBE` | `SUBSCRIBE:<deviceId>` | request | Subscribes the sender to a registered device (section 7). | The device's stored state, to the sender |
-| `UNSUBSCRIBE` | `UNSUBSCRIBE:<deviceId>` | request | Unsubscribes the sender from the device. | - |
-| `DEVICE_ADD` | `DEVICE-ADD:<id>` | request | Registers connected client `<id>` as a device in the home. Fails if the client is not connected, is already registered, or is the sender itself. | `DEVICE-ADDED:<id>,<name>,ONLINE[,<kind>]` to **everyone** |
-| `DEVICE_REMOVE` | `DEVICE-REMOVE:<id>` | request | Unregisters the device, takes it out of every room, removes every subscription to it, and removes every automation that uses it. | `ROOM-REMOVED:<room>,<id>` for each room, `AUTOMATION-REMOVED:<id>` for each automation, then `DEVICE-REMOVED:<id>`, to **everyone** |
-| `DEVICE_LIST` | `DEVICE-LIST` | request | - | One `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>[,<kind>]` per registered device, to the sender |
-| `ROOM_CREATE` | `ROOM-CREATE:<name>` | request | Creates an empty room called `<name>`. The **server chooses the room's id**. The name is trimmed and must not be blank or contain `/`, `=` or line breaks. | `ROOM-CREATED:<room>,<name>` to **everyone** |
-| `ROOM_RENAME` | `ROOM-RENAME:<room>,<name>` | request | Sets or changes the name of an existing room. Everything after the first comma is the name, with the same rules as `ROOM-CREATE`. | `ROOM-RENAMED:<room>,<name>` to **everyone** |
-| `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room (without a name) if needed. | `ROOM-ADDED:<room>,<id>` to **everyone** |
-| `ROOM_REMOVE` | `ROOM-REMOVE:<room>,<id>` | request | Takes client `<id>` out of the room. A room that becomes empty is deleted, unless it has a name. | `ROOM-REMOVED:<room>,<id>` to **everyone** |
-| `ROOM_DELETE` | `ROOM-DELETE:<room>` | request | Deletes the room, named or not, even if devices are in it. The devices stay registered; they are only no longer in the room. Fails if the room does not exist. | `ROOM-DELETED:<room>` to **everyone** |
-| `ROOM_LIST` | `ROOM-LIST` | request | - | One `ROOM-CREATED:<room>,<name>` per named room, then one `ROOM-ADDED:<room>,<id>` per client in each room, to the sender |
-| `AUTOMATION_ADD` | `AUTOMATION-ADD:<sensor>,<reading>,<ABOVE\|BELOW>,<threshold>,<device>,<command>` | request | Adds an automation (section 12). Both the sensor and the device must be registered. | `AUTOMATION-ADDED:<id>,…` to **everyone** |
-| `AUTOMATION_REMOVE` | `AUTOMATION-REMOVE:<id>` | request | Removes an automation. | `AUTOMATION-REMOVED:<id>` to **everyone** |
-| `AUTOMATION_LIST` | `AUTOMATION-LIST` | request | - | One `AUTOMATION-ADDED:<id>,…` per automation, to the sender |
+| Constant | Format | Kind | What the server does                                                                                                                                                                | Answer |
+|---|---|---|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---|
+| `HELLO` | `HELLO:<name>,<type>[,<kind>]` or `HELLO:<name>,CONTROLLER,<role>` | request | Records who the client is, and gives it its id: the same id as before if the name has been used before (section 2).                                                                 | `WELCOME:<id>` to the sender |
+| `PING` | `PING` | request | Nothing.                                                                                                                                                                            | `PONG` to the sender |
+| `STATE` | `STATE:<property>,<value>` | request | Stores the device's value, sends it to the device's subscribers, and, if it is a number, fires every automation whose condition it makes true (sections 8 and 13). Sent by devices. | `<property>:<value>` to every subscriber |
+| `SUBSCRIBE` | `SUBSCRIBE:<deviceId>` | request | Subscribes the sender to a registered device (section 8).                                                                                                                           | The device's stored state, to the sender |
+| `UNSUBSCRIBE` | `UNSUBSCRIBE:<deviceId>` | request | Unsubscribes the sender from the device.                                                                                                                                            | - |
+| `DEVICE_ADD` | `DEVICE-ADD:<id>` | request | Registers connected client `<id>` as a device in the home. Fails if the client is not connected, is already registered, or is the sender itself.                                    | `DEVICE-ADDED:<id>,<name>,ONLINE[,<kind>]` to **everyone** |
+| `DEVICE_REMOVE` | `DEVICE-REMOVE:<id>` | request | Unregisters the device, takes it out of every room, removes every subscription to it, and removes every automation that uses it.                                                    | `ROOM-REMOVED:<room>,<id>` for each room, `AUTOMATION-REMOVED:<id>` for each automation, then `DEVICE-REMOVED:<id>`, to **everyone** |
+| `DEVICE_LIST` | `DEVICE-LIST` | request | -                                                                                                                                                                                   | One `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>[,<kind>]` per registered device, to the sender |
+| `ROOM_CREATE` | `ROOM-CREATE:<name>` | request | Creates an empty room called `<name>`. The **server chooses the room's id**. The name is trimmed and must not be blank or contain `/`, `=` or line breaks.                          | `ROOM-CREATED:<room>,<name>` to **everyone** |
+| `ROOM_RENAME` | `ROOM-RENAME:<room>,<name>` | request | Sets or changes the name of an existing room. Everything after the first comma is the name, with the same rules as `ROOM-CREATE`.                                                   | `ROOM-RENAMED:<room>,<name>` to **everyone** |
+| `ROOM_ADD` | `ROOM-ADD:<room>,<id>` | request | Puts registered device `<id>` in room `<room>`, creating the room (without a name) if needed.                                                                                       | `ROOM-ADDED:<room>,<id>` to **everyone** |
+| `ROOM_REMOVE` | `ROOM-REMOVE:<room>,<id>` | request | Takes client `<id>` out of the room. A room that becomes empty is deleted, unless it has a name.                                                                                    | `ROOM-REMOVED:<room>,<id>` to **everyone** |
+| `ROOM_DELETE` | `ROOM-DELETE:<room>` | request | Deletes the room, named or not, even if devices are in it. The devices stay registered; they are only no longer in the room. Fails if the room does not exist.                      | `ROOM-DELETED:<room>` to **everyone** |
+| `ROOM_LIST` | `ROOM-LIST` | request | -                                                                                                                                                                                   | One `ROOM-CREATED:<room>,<name>` per named room, then one `ROOM-ADDED:<room>,<id>` per client in each room, to the sender |
+| `AUTOMATION_ADD` | `AUTOMATION-ADD:<sensor>,<reading>,<ABOVE\|BELOW>,<threshold>,<device>,<command>` | request | Adds an automation (section 13). Both the sensor and the device must be registered.                                                                                                 | `AUTOMATION-ADDED:<id>,…` to **everyone** |
+| `AUTOMATION_REMOVE` | `AUTOMATION-REMOVE:<id>` | request | Removes an automation.                                                                                                                                                              | `AUTOMATION-REMOVED:<id>` to **everyone** |
+| `AUTOMATION_LIST` | `AUTOMATION-LIST` | request | -                                                                                                                                                                                   | One `AUTOMATION-ADDED:<id>,…` per automation, to the sender |
 
-## 11. Messages to a room
+## 12. Messages to a room
 
 Sent to `RO<id>`. The room must already exist (create it with `ROOM-CREATE` or `ROOM-ADD`), otherwise the server answers with an error.
 
-| Constant | Format | Kind | What happens | Answer |
-|---|---|---|---|---|
-| `JOIN_ROOM` | `ROOM-JOIN` | request | The **sender** joins the room. | `ROOM-ADDED:<room>,<sender>` to **everyone** |
-| `LEAVE_ROOM` | `ROOM-LEAVE` | request | The **sender** leaves the room. A room that becomes empty is deleted. | `ROOM-REMOVED:<room>,<sender>` to **everyone** |
-| `GET_ROOM_CLIENTS` | `ROOM-CLIENT-LIST` | request | - | `ROOM-CLIENTS:<id>,<id>,…` to the sender |
+| Constant | Format | Kind | What happens                                                                                                             | Answer |
+|---|---|---|--------------------------------------------------------------------------------------------------------------------------|---|
+| `JOIN_ROOM` | `ROOM-JOIN` | request | The **sender** joins the room.                                                                                           | `ROOM-ADDED:<room>,<sender>` to **everyone** |
+| `LEAVE_ROOM` | `ROOM-LEAVE` | request | The **sender** leaves the room. A room that becomes empty is deleted, unless it has a name.                              | `ROOM-REMOVED:<room>,<sender>` to **everyone** |
+| `GET_ROOM_CLIENTS` | `ROOM-CLIENT-LIST` | request | -                                                                                                                        | `ROOM-CLIENTS:<id>,<id>,…` to the sender |
 | `ROOM_BROADCAST` | `ROOM-BROADCAST:<command>` | request | Forwards `<command>` to every client in the room. The source stays the original sender, so devices reply to that sender. | - |
 
 Example: `RO010/CH000/ROOM-BROADCAST:power:false/=` turns off every light in room 10.
 
-## 12. Automations
+## 13. Automations
 
 An automation is a rule the **server** follows on its own: *when a sensor's reading goes above or below a threshold, send a command to a device.* Automations keep working when no controller is connected.
 
-The server checks every `STATE` value that is a number (section 7), so the watched device is usually a sensor, but can be any registered device. For example, "when the light's `value` goes above 50, run the fan at `high`".
+The server checks every `STATE` value that is a number (section 8), so the watched device is usually a sensor, but can be any registered device. For example, "when the light's `value` goes above 50, run the fan at `high`".
 
 ### Format
 
@@ -359,33 +414,33 @@ To switch something back, add a second automation with the opposite condition, f
 - The **server** checks the format, that the sensor and the device are registered, and that the command is a device command and not a protocol message.
 - When a device is unregistered with `DEVICE-REMOVE`, every automation that uses it is removed too.
 
-## 13. Replies and broadcasts from the server
+## 14. Replies and broadcasts from the server
 
 These are all replies, so a receiver never answers them. The one exception is `PING`, a request the server sends to check that a client is still there, which every client answers with `PONG`. Messages marked **everyone** are sent to `AL000`, so every client, whatever its role, sees the same devices and rooms.
 
-| Constant | Format | Sent to | Meaning |
-|---|---|---|---|
-| `WELCOME` | `WELCOME:<id>` | sender | Answer to `HELLO`: the client's id (section 1). |
-| `REPLACED` | `REPLACED` | the old connection | A newer connection introduced itself with the same name; this one is closed. The client must not reconnect. |
-| `PING` | `PING` | every client, every 5 s | A request, not a reply: answer with `PONG` (section 1). |
-| `PONG` | `PONG` | sender | Answer to `PING`. |
+| Constant | Format | Sent to | Meaning                                                                                                                                                                           |
+|---|---|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `WELCOME` | `WELCOME:<id>` | sender | Answer to `HELLO`: the client's id (section 2).                                                                                                                                   |
+| `REPLACED` | `REPLACED` | the old connection | A newer connection introduced itself with the same name; this one is closed. The client must not reconnect.                                                                       |
+| `PING` | `PING` | every client, every 5 s | A request, not a reply: answer with `PONG` (section 2).                                                                                                                           |
+| `PONG` | `PONG` | sender | Answer to `PING`.                                                                                                                                                                 |
 | `DEVICE_ADDED` | `DEVICE-ADDED:<id>,<name>,<ONLINE\|OFFLINE>[,<kind>]` | everyone, or the sender after `DEVICE-LIST` | Client `<id>`, called `<name>`, is a registered device, and is connected or not. `<kind>`, for example `Fan`, is what the device said it is in `HELLO`; left out if it gave none. |
-| `DEVICE_ONLINE` | `DEVICE-ONLINE:<id>` | everyone | A registered device connected again. |
-| `DEVICE_OFFLINE` | `DEVICE-OFFLINE:<id>` | everyone | A registered device lost its connection. It stays registered. |
-| `DEVICE_REMOVED` | `DEVICE-REMOVED:<id>` | everyone | Device `<id>` was unregistered. |
-| `ROOM_CREATED` | `ROOM-CREATED:<room>,<name>` | everyone, or the sender after `ROOM-LIST` | Room `<room>` exists and is called `<name>`. |
-| `ROOM_RENAMED` | `ROOM-RENAMED:<room>,<name>` | everyone | Room `<room>` is now called `<name>`. |
-| `ROOM_ADDED` | `ROOM-ADDED:<room>,<id>` | everyone, or the sender after `ROOM-LIST` | Client `<id>` is in room `<room>`. |
-| `ROOM_REMOVED` | `ROOM-REMOVED:<room>,<id>` | everyone | Client `<id>` left room `<room>`. |
-| `ROOM_DELETED` | `ROOM-DELETED:<room>` | everyone | Room `<room>` was deleted, with its name and everything in it. No `ROOM-REMOVED` is sent for the clients that were in it. |
-| `ROOM_CLIENTS` | `ROOM-CLIENTS:<id>,<id>,…` | sender | The clients in a room; the value is empty for an empty room. Comes from `RO<room>`. |
-| *(state)* | `<property>:<value>`, from `CH<device>` | subscribers | One property of a device's state, for example `CH005/CH001/powerOn:true/=` (section 7). |
-| `AUTOMATION_ADDED` | `AUTOMATION-ADDED:<id>,<sensor>,<reading>,<condition>,<threshold>,<device>,<command>` | everyone, or the sender after `AUTOMATION-LIST` | An automation exists. |
-| `AUTOMATION_REMOVED` | `AUTOMATION-REMOVED:<id>` | everyone | An automation was removed. |
-| `AUTOMATION_TRIGGERED` | `AUTOMATION-TRIGGERED:<id>,<value>` | everyone | An automation fired because its sensor reported `<value>`. |
-| `ERROR` | `ERROR:<request>,<reason>` | sender | See below. |
+| `DEVICE_ONLINE` | `DEVICE-ONLINE:<id>` | everyone | A registered device connected again.                                                                                                                                              |
+| `DEVICE_OFFLINE` | `DEVICE-OFFLINE:<id>` | everyone | A registered device lost its connection. It stays registered.                                                                                                                     |
+| `DEVICE_REMOVED` | `DEVICE-REMOVED:<id>` | everyone | Device `<id>` was unregistered.                                                                                                                                                   |
+| `ROOM_CREATED` | `ROOM-CREATED:<room>,<name>` | everyone, or the sender after `ROOM-LIST` | Room `<room>` exists and is called `<name>`.                                                                                                                                      |
+| `ROOM_RENAMED` | `ROOM-RENAMED:<room>,<name>` | everyone | Room `<room>` is now called `<name>`.                                                                                                                                             |
+| `ROOM_ADDED` | `ROOM-ADDED:<room>,<id>` | everyone, or the sender after `ROOM-LIST` | Client `<id>` is in room `<room>`.                                                                                                                                                |
+| `ROOM_REMOVED` | `ROOM-REMOVED:<room>,<id>` | everyone | Client `<id>` left room `<room>`.                                                                                                                                                 |
+| `ROOM_DELETED` | `ROOM-DELETED:<room>` | everyone | Room `<room>` was deleted, with its name and everything in it. No `ROOM-REMOVED` is sent for the clients that were in it.                                                         |
+| `ROOM_CLIENTS` | `ROOM-CLIENTS:<id>,<id>,…` | sender | The clients in a room; the value is empty for an empty room. Comes from `RO<room>`.                                                                                               |
+| *(state)* | `<property>:<value>`, from `CH<device>` | subscribers | One property of a device's state, for example `CH005/CH001/powerOn:true/=` (section 8).                                                                                           |
+| `AUTOMATION_ADDED` | `AUTOMATION-ADDED:<id>,<sensor>,<reading>,<condition>,<threshold>,<device>,<command>` | everyone, or the sender after `AUTOMATION-LIST` | An automation exists.                                                                                                                                                             |
+| `AUTOMATION_REMOVED` | `AUTOMATION-REMOVED:<id>` | everyone | An automation was removed.                                                                                                                                                        |
+| `AUTOMATION_TRIGGERED` | `AUTOMATION-TRIGGERED:<id>,<value>` | everyone | An automation fired because its sensor reported `<value>`.                                                                                                                        |
+| `ERROR` | `ERROR:<request>,<reason>` | sender | See below.                                                                                                                                                                        |
 
-## 14. Errors
+## 15. Errors
 
 When the server cannot handle a message, it replies to the sender with:
 
@@ -406,9 +461,9 @@ A device that rejects a command replies the same way, but from its own address, 
 
 Any `/` or line break in a reason is replaced with a space, so the reply is always a valid message.
 
-## 15. Controller roles
+## 16. Controller roles
 
-A `Controller` gets a `Role` when it is created. The role cannot be changed afterwards.
+A `Controller` gets a `Role` when it is created. The role cannot be changed after.
 
 | What | Messages | `GUEST` | `USER` | `OWNER` |
 |---|---|:-:|:-:|:-:|
@@ -418,9 +473,9 @@ A `Controller` gets a `Role` when it is created. The role cannot be changed afte
 | Add and remove automations | `AUTOMATION-ADD`, `AUTOMATION-REMOVE` | | ✓ | ✓ |
 | Add and remove devices | `DEVICE-ADD`, `DEVICE-REMOVE` | | | ✓ |
 
-The role is checked **in the controller**, before a message is sent. A controller also gives its role in `HELLO` (section 1), so the server knows it, but the server does not check it yet (see section 17).
+The role is checked **in the controller**, before a message is sent. A controller also gives its role in `HELLO` (section 2), so the server knows it, but the server does not check it yet (see section 18).
 
-## 16. Example exchanges
+## 17. Example exchanges
 
 In these examples, client 1 is a `Light`, client 3 is an owner controller, and client 5 is a guest controller. Messages are shown as they arrive, after the server has filled in the source.
 
@@ -493,15 +548,15 @@ server → 5   CH005/CH001/powerOn:true/=             (and to the other subscrib
 2 → server   SE000/CH002/STATE:temperature,25.4/=   (still above: does not fire again)
 ```
 
-## 17. Rules and limitations
+## 18. Rules and limitations
 
+- **ID value 000 is used as a placeholder** for destinations/sources that don't have an ID at the point of transmission. The server has no ID at all, and will always use 000.
 - **State is only sent when it changes.** The server keeps the latest value of every property, so a new subscriber gets the current state at once, without the device being asked.
 - **Replies are never answered.** A client that receives a reply it doesn't need ignores it silently. The server follows the same rule: an `ERROR` sent to the server is logged, not answered.
 - **Unknown device commands are answered with an error**, but unknown *replies* are ignored.
-- **Names must be unique.** Two clients with the same name get the same id, and the newer one pushes the older one out (section 1).
+- **Names must be unique.** Two clients with the same name get the same id, and the newer one pushes the older one out (section 2).
 - **Names are only remembered while the server runs.** After a server restart, devices get new ids and must be added again.
 - **Roles are not enforced by the server.** A client that does not use the `Controller` class can send `DEVICE-ADD` or `ROOM-ADD` directly. The server knows each controller's role from `HELLO`, but that role is whatever the client claims, so enforcing it would also need a way to prove it, for example a login step.
 - **Automations, rooms and registered devices live in the server's memory.** They are lost when the server restarts.
 - **`ROOM-JOIN` cannot create a room.** A client can only join a room that already exists; rooms are created with `ROOM-CREATE` or `ROOM-ADD`.
-- **Named rooms are never deleted automatically.** There is no `ROOM-DELETE` yet, so a room created with `ROOM-CREATE` stays until the server restarts.
 - **New messages follow the [naming rule](#naming-rule).** `ProtocolTest` fails if a key in `Protocol` breaks it.
