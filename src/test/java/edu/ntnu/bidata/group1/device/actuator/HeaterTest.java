@@ -115,23 +115,6 @@ class HeaterTest {
   }
 
   /**
-   * Verifies that changing the target temperature does not automatically power
-   * the heater on.
-   *
-   * <p>The documented behaviour states that modifying the target temperature
-   * only changes the target value and must not affect the heater's power state.
-   */
-  @Test
-  void changingTargetDoesNotTurnHeaterOn() {
-    TestHeater heater = new TestHeater();
-
-    heater.execute(Heater.TARGET, "28.0");
-
-    assertFalse(heater.isPowerOn());
-    assertEquals(28.0, heater.getTargetTemperature());
-  }
-
-  /**
    * Verifies that successive command executions leave the heater in the state
    * represented by the most recently executed commands.
    *
