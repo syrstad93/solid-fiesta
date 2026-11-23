@@ -422,6 +422,8 @@ public class Controller extends Device {
    * <p>The command and argument are checked against the device's announced commands before
    * anything is sent, the same way as in {@link #sendCommand(long, String, String)}.
    *
+   * <p>AI DECLARATION: this method was created with help from AI.
+   *
    * @param sensorId the client id of the device to watch, usually a sensor; must be registered
    * @param reading the reading to watch, for example {@code temperature}
    * @param condition {@link Condition#ABOVE} or {@link Condition#BELOW}
