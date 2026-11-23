@@ -66,7 +66,7 @@ The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntn
 | Framing | One message per line, UTF-8, ending with an equal sign (=)                                  |
 | Topology | Star: every client connects to the server, and the server forwards messages between clients |
 
-TCP is used because it of its reliability: messages arrive in order, without loss or duplication, as long as the connection remains active. Messages ends with (=) to signify a complete message, which protects against disconnections of the TCP transmission. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
+TCP is used because of its reliability: messages arrive in order, without loss or duplication, as long as the connection remains active. Messages ends with (=) to signify a complete message, which protects against disconnections of the TCP transmission. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
 
 TCP is inherently connection-oriented, so a client must connect to the server before it can send or receive messages. A client that disconnects loses its connection and must reconnect to continue.
 
@@ -313,7 +313,7 @@ A command without a parameter is sent as its name alone, for example `CH006/CH00
 
 A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 9). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
 
-Values are rounded to one decimal. Reading names should be lower case (the [naming rule](#naming-rule) for device properties), may not contain `/ = : ,`, and may not be a protocol key in any letter case.
+Values are rounded to one decimal. Reading names should be lowercase (the [naming rule](#naming-rule) for device properties), may not contain `/ = : ,`, and may not be a protocol key in any letter case.
 
 A sensor accepts **no commands**: it answers `GET-COMMANDS` with `COMMAND-END:0` and any device command with `ERROR:<command>,a sensor accepts no commands`. A controller can tell a sensor from an actuator by its `type:SENSOR` property.
 
@@ -463,7 +463,7 @@ Any `/` or line break in a reason is replaced with a space, so the reply is alwa
 
 ## 16. Controller roles
 
-A `Controller` gets a `Role` when it is created. The role cannot be changed afterwards.
+A `Controller` gets a `Role` when it is created. The role cannot be changed after.
 
 | What | Messages | `GUEST` | `USER` | `OWNER` |
 |---|---|:-:|:-:|:-:|
