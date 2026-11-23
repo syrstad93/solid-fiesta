@@ -66,6 +66,12 @@ The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntn
 | Framing | One message per line, UTF-8, ending in a line break |
 | Topology | Star: every client connects to the server, and the server forwards messages between clients |
 
+We use TCP because it of its reliability: messages arrive in order, without loss or duplication. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
+
+TCP is inherently connection-oriented, so a client must connect to the server before it can send or receive messages. A client that disconnects loses its connection and must reconnect to continue.
+
+When a client disconnects, some of its information is kept, and some is removed, depending on whether it introduced itself with `HELLO` (section 11). Clients that have introduced themselves will retain their identity and registration, and will get their old id back when they reconnect. Clients that have not introduced themselves will lose everything when they disconnect.
+
 ### Connecting: `HELLO` and `WELCOME`
 
 The first message a client sends is an introduction, and the server answers with the client's id:
