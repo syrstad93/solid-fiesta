@@ -85,6 +85,13 @@ The project is organized into the following main packages:
 - `edu.ntnu.bidata.group1.network`: Contains classes related to network communication, including socket handling and message processing.
 - `edu.ntnu.bidata.group1.utility`: Contains utility classes and helper functions used throughout the project.
 
+## Testing
+
+The project includes unit tests for various components, ensuring the correctness and reliability of the system.
+
+The application has also been user tested by the group members,
+and feedback has been collected to improve the user experience and functionality of the system.
+
 ## Sprints
 Sprints are found under [sprints](sprints/)
 
