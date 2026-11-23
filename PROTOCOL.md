@@ -1,4 +1,4 @@
-# Smart home protocol
+# Smart Home Protocol
 
 This document describes the Smart Home protocol, including the system architecture, the communication rules, the formating of the messages, error handling and reliability mechanisms.
 
@@ -58,15 +58,15 @@ The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntn
 
 ## 2. Transport and connections
 
-| | |
-|---|---|
-| Protocol | TCP |
-| Address | `127.0.0.1` (`UniversallyAvailableInformation.LOCALHOST`) |
-| Port | `1238` (`UniversallyAvailableInformation.PORT_NUMBER`) |
-| Framing | One message per line, UTF-8, ending in a line break |
+| |                                                                                             |
+|---|---------------------------------------------------------------------------------------------|
+| Protocol | TCP                                                                                         |
+| Address | `127.0.0.1` (`UniversallyAvailableInformation.LOCALHOST`)                                   |
+| Port | `1238` (`UniversallyAvailableInformation.PORT_NUMBER`)                                      |
+| Framing | One message per line, UTF-8, ending with an equal sign (=)                                  |
 | Topology | Star: every client connects to the server, and the server forwards messages between clients |
 
-We use TCP because it of its reliability: messages arrive in order, without loss or duplication. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
+TCP is used because it of its reliability: messages arrive in order, without loss or duplication. The server is the hub of the star topology, and every client connects to it. The server forwards messages between clients, so a client never connects directly to another client.
 
 TCP is inherently connection-oriented, so a client must connect to the server before it can send or receive messages. A client that disconnects loses its connection and must reconnect to continue.
 
@@ -114,6 +114,8 @@ When a client's connection is lost, what the server does depends on whether the 
 | Subscriptions it holds, its stored state | Removed; it subscribes and sends its state again when it reconnects | Removed |
 | Broadcast | `DEVICE-OFFLINE:<id>` if it is a registered device, and `DEVICE-ONLINE:<id>` when it reconnects | `ROOM-REMOVED:<room>,<id>` for each room it was in; if it was a registered device, also `AUTOMATION-REMOVED:<id>` for each of its automations, then `DEVICE-REMOVED:<id>` |
 
+The decision to implement a heartbeat and a timeout ensures that the server does not keep a dead connection open forever. However, to protect against temporary disconnections, the server keeps the registration, rooms, automations and subscriptions of a client that introduced itself with `HELLO`. When it reconnects, it gets its old id back, and can continue where it left off.
+
 ## 3. Message format
 
 Every message has four parts separated by `/`:
@@ -142,6 +144,8 @@ CH001/CH000/value:75/=   (sent by client 3)
 CH001/CH003/value:75/=   (what client 1 receives: the server filled in the source)
 ```
 
+The message format was designed with destination, source and command, so that there's no need for any extra information in addition to the message in order to understand it in full. In some instances, additional information is still passed together with the message anyway, but this is for other concerns than providing information out of necessity.
+
 ## 4. Addresses
 
 | Address | Meaning | Constant |
@@ -162,7 +166,7 @@ The command part is either a **key** (`DEVICE-LIST`) or a **key and a value** se
 There are two kinds of keys:
 
 - **Protocol messages**: the fixed set in sections 5-13, defined in the `Protocol` enum. Every client and the server understand them.
-- **Device-specific commands**: names such as `power` or `value`, chosen by each actuator (section 8). A device command may not use a protocol key.
+- **Device-specific commands**: names such as `power` or `value`, chosen by each actuator (section 9). A device command may not use a protocol key.
 
 ### Naming rule
 
@@ -207,7 +211,7 @@ Sent to `CH<id>`, usually by a controller. Actuators and sensors both understand
 | `PING` | `PING` | request | Answers `PONG`. The server sends it every 5 s (section 1). |
 | *(device command)* | `<name>:<argument>` | - | See [Device-specific commands](#8-device-specific-commands). |
 
-A device's state is not asked for from the device itself: it goes through the server, to the clients that have subscribed to the device (section 7).
+A device's state is not asked for from the device itself: it goes through the server, to the clients that have subscribed to the device (section 8).
 
 ## 7. Replies from a device
 
@@ -219,7 +223,7 @@ A device's state is not asked for from the device itself: it goes through the se
 
 When an actuator starts, it broadcasts its commands to `AL000` without being asked.
 
-After carrying out a valid command, an actuator does not reply to the sender. Instead it sends every property that changed to the server, which passes it on to all subscribers (section 7), so the sender sees the result like every other controller.
+After carrying out a valid command, an actuator does not reply to the sender. Instead, it sends every property that changed to the server, which passes it on to all subscribers (section 8), so the sender sees the result like every other controller.
 
 ## 8. State and subscriptions
 
@@ -255,7 +259,7 @@ For each `STATE` message, the server:
 | `SUBSCRIBE` | `SUBSCRIBE:<deviceId>` | `SE000` | Subscribes the sender to a registered device, and at once sends it the device's stored state, one `<property>:<value>` message per property. Subscribing again just sends the state again. |
 | `UNSUBSCRIBE` | `UNSUBSCRIBE:<deviceId>` | `SE000` | Stops sending the device's state to the sender. |
 
-A `Controller` subscribes by itself to every registered device it learns about, and subscribes again after a reconnect. It can also call `unsubscribe(deviceId)` and `subscribe(deviceId)`.
+A `Controller` subscribes by itself to every registered device it learns about, and subscribes again after a reconnect. It can also call `unsubscribe(deviceId)` and `subscribe(deviceId)`. This design provides flexibility for a controller that wants to subscribe only to some devices, or to unsubscribe from a device it no longer cares about.
 
 A subscription ends when:
 
@@ -279,7 +283,7 @@ Each actuator declares the commands it accepts as a `CommandSpec`. A spec has a 
 
 Ranges include both ends. Names and options may not contain `/ = : , |`, and a name may not be a protocol key (for example `error` or `hello`, in any letter case).
 
-The controller checks every command against the spec **before sending it**, and the device checks it again when it arrives. A valid command is executed, and the device sends what changed to the server (section 7). An invalid one is answered with `ERROR:<command>,<reason>`.
+The controller checks every command against the spec **before sending it**, and the device checks it again when it arrives. A valid command is executed, and the device sends what changed to the server (section 8). An invalid one is answered with `ERROR:<command>,<reason>`.
 
 **Actuators in the project:**
 
@@ -307,7 +311,7 @@ A command without a parameter is sent as its name alone, for example `CH006/CH00
 
 ## 10. Sensors
 
-A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 7). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
+A sensor measures something every 2 seconds. Each measurement is stored as a property, for example `temperature`, and if it differs from the last one, it is sent to the server as `STATE:temperature,21.5` (section 8). The server passes it on to the sensor's subscribers and checks it against the [automations](#12-automations).
 
 Values are rounded to one decimal. Reading names should be lower case (the [naming rule](#naming-rule) for device properties), may not contain `/ = : ,`, and may not be a protocol key in any letter case.
 
@@ -327,7 +331,7 @@ Because a switch reports a number, it drives automations like any other sensor. 
 
 ## 11. Messages to the server
 
-Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<request>,<reason>` (section 14).
+Sent to `SE000`. A request the server cannot carry out is answered with `ERROR:<request>,<reason>` (section 15).
 
 | Constant | Format | Kind | What the server does | Answer |
 |---|---|---|---|---|
@@ -366,7 +370,7 @@ Example: `RO010/CH000/ROOM-BROADCAST:power:false/=` turns off every light in roo
 
 An automation is a rule the **server** follows on its own: *when a sensor's reading goes above or below a threshold, send a command to a device.* Automations keep working when no controller is connected.
 
-The server checks every `STATE` value that is a number (section 7), so the watched device is usually a sensor, but can be any registered device. For example, "when the light's `value` goes above 50, run the fan at `high`".
+The server checks every `STATE` value that is a number (section 8), so the watched device is usually a sensor, but can be any registered device. For example, "when the light's `value` goes above 50, run the fan at `high`".
 
 ### Format
 
@@ -469,7 +473,7 @@ A `Controller` gets a `Role` when it is created. The role cannot be changed afte
 | Add and remove automations | `AUTOMATION-ADD`, `AUTOMATION-REMOVE` | | ✓ | ✓ |
 | Add and remove devices | `DEVICE-ADD`, `DEVICE-REMOVE` | | | ✓ |
 
-The role is checked **in the controller**, before a message is sent. A controller also gives its role in `HELLO` (section 1), so the server knows it, but the server does not check it yet (see section 17).
+The role is checked **in the controller**, before a message is sent. A controller also gives its role in `HELLO` (section 2), so the server knows it, but the server does not check it yet (see section 18).
 
 ## 17. Example exchanges
 
@@ -546,6 +550,7 @@ server → 5   CH005/CH001/powerOn:true/=             (and to the other subscrib
 
 ## 18. Rules and limitations
 
+- **ID value 000 is used as a placeholder** for destinations/sources that don't have an ID at the point of transmission. The server has no ID at all, and will always use 000.
 - **State is only sent when it changes.** The server keeps the latest value of every property, so a new subscriber gets the current state at once, without the device being asked.
 - **Replies are never answered.** A client that receives a reply it doesn't need ignores it silently. The server follows the same rule: an `ERROR` sent to the server is logged, not answered.
 - **Unknown device commands are answered with an error**, but unknown *replies* are ignored.
@@ -554,5 +559,4 @@ server → 5   CH005/CH001/powerOn:true/=             (and to the other subscrib
 - **Roles are not enforced by the server.** A client that does not use the `Controller` class can send `DEVICE-ADD` or `ROOM-ADD` directly. The server knows each controller's role from `HELLO`, but that role is whatever the client claims, so enforcing it would also need a way to prove it, for example a login step.
 - **Automations, rooms and registered devices live in the server's memory.** They are lost when the server restarts.
 - **`ROOM-JOIN` cannot create a room.** A client can only join a room that already exists; rooms are created with `ROOM-CREATE` or `ROOM-ADD`.
-- **Named rooms are never deleted automatically.** There is no `ROOM-DELETE` yet, so a room created with `ROOM-CREATE` stays until the server restarts.
 - **New messages follow the [naming rule](#naming-rule).** `ProtocolTest` fails if a key in `Protocol` breaks it.
