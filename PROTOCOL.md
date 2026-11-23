@@ -184,6 +184,19 @@ A device command may not reuse a protocol key in **any** letter case, so `error`
 
 Every protocol message is either a **request**, which asks the receiver to do something, or a **reply**, which answers or announces something. **Replies are never answered**, not even with an error. That rule keeps two clients from sending errors back and forth forever.
 
+### Types and Special Values
+
+The table below lists the types and special values used in the protocol. They are used in messages, commands, and properties to indicate specific meanings or constraints.
+
+| Type                 | Values | Description |
+|----------------------|---|---|
+| Client type          | `ACTUATOR`, `SENSOR`, `CONTROLLER` | The kind of device, sent in `HELLO`. |
+| Controller role      | `OWNER`, `USER`, `GUEST` | The role of a controller, sent in `HELLO`. |
+| Property type        | `NONE`, `BOOLEAN`, `INTEGER`, `DECIMAL`, `ENUM` | The type of a device command or property, sent in `COMMAND:<spec>`. |
+| Automation condition | `ABOVE`, `BELOW` | Whether an automation fires when a sensor's reading goes above or below its threshold. |
+| Device state         | `ONLINE`, `OFFLINE` | Whether a device is connected or not, sent in `DEVICE-ADDED` and `DEVICE-OFFLINE`. |
+| Address prefix       | `CH`, `SE`, `RO`, `AL` | The first two letters of an address, for a client, the server, a room or all clients. |
+
 ## 6. Messages to a device
 
 Sent to `CH<id>`, usually by a controller. Actuators and sensors both understand these.
