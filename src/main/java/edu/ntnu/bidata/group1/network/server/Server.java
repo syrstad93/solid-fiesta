@@ -32,6 +32,14 @@ import java.util.concurrent.TimeUnit;
  *   The number of threads is unbounded.
  * </li>
  * </ul>
+ *
+ * <p>AI declaration: This class is heavily inspired by the solution of assignment 3 in this course.
+ * In assignment 3, AI did assist in suggesting and explaining the implementation of ServerSocket,
+ * Socket, and ExecutorService, as well as the use of ConcurrentHashMap for thread safety.
+ * However, the use of CountDownLatch was an AI suggestion after some tests failed due to the
+ * server not being ready to accept connections.
+ *
+ * <p>AI was also used for general code review.
  */
 public class Server implements Messenger<String, ClientHandler> {
 
