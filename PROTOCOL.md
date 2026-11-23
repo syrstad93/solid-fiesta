@@ -1,6 +1,8 @@
 # Smart home protocol
 
-This document describes every message that the server and its clients (actuators, sensors and controllers) exchange. The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntnu/bidata/group1/utility/Protocol.java). If you add or change a message, update both.
+This document describes the Smart Home protocol, including the system architecture, the communication rules, the formating of the messages, error handling and reliability mechanisms.
+
+The message names are defined in code in [`Protocol.java`](src/main/java/edu/ntnu/bidata/group1/utility/Protocol.java). If you add or change a message, update both.
 
 ## Contents
 
