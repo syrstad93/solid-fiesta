@@ -92,6 +92,16 @@ The project includes unit tests for various components, ensuring the correctness
 The application has also been user tested by the group members,
 and feedback has been collected to improve the user experience and functionality of the system.
 
-## Sprints
-Sprints are found under [sprints](sprints/)
+## Development Process
+
+A combined PDF document of all sprint plans and sprint reviews are uploaded to Inspera by each group member.
+It is also uploaded to the project directory in a folder called `doc`.
+
+The project directory 'doc' contains the following files:
+- `FullSprintsDoc.pdf`: Sprint 1 plan and review.
+- `Planning Process.pdf`: A document showing how the group planned and organized the development process outside the sprints.
+- **Class Diagrams**: Class diagrams for the project, showing the relationships between different classes and their attributes/methods.
+- **Sequence Diagrams**: Sequence diagrams illustrating the interactions between different components of the system during various operations.
+- **Component Diagrams**: Component diagrams showing the high-level structure of the system and how different components interact with each other.
+- **Topology Illustration**: A visual representation of the network topology used in the smart home automation system.
 
