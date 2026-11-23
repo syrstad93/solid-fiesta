@@ -15,7 +15,6 @@ public class RoomList {
   private static volatile RoomList instance;
 
   private Map<Long, Room> rooms;
-  private final Long idCounter = 1L;
 
   /**
    * Instantiates the class with an empty map.
@@ -153,7 +152,7 @@ public class RoomList {
    * @return a room ID that is not in use.
    */
   private synchronized long nextId() {
-    long id = this.idCounter;
+    long id = 1L;
     do {
       id++;
     } while (this.rooms.containsKey(id));
