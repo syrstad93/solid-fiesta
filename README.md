@@ -76,6 +76,15 @@ The [PROTOCOL.md](PROTOCOL.md) describes how server and client communicates with
 - Automations
 - Rooms.
 
+## Project Structure
+
+The project is organized into the following main packages:
+- `edu.ntnu.bidata.group1`: Contains the main classes for the project, including the server and client implementations.
+- `edu.ntnu.bidata.group1.gui`: Contains classes related to the graphical user interface (GUI) of the application.
+- `edu.ntnu.bidata.group1.devices`: Contains classes representing different types of smart home devices, including controllers, sensors, and actuators.
+- `edu.ntnu.bidata.group1.network`: Contains classes related to network communication, including socket handling and message processing.
+- `edu.ntnu.bidata.group1.utility`: Contains utility classes and helper functions used throughout the project.
+
 ## Sprints
 Sprints are found under [sprints](sprints/)
 
