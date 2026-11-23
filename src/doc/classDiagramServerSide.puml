@@ -1,0 +1,135 @@
+@startuml
+title Server-Side Class Diagram
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam dpi 150
+
+package "server" {
+
+  interface Messenger<MessageT, ClientT> {
+    + onMessage(message : MessageT, sender : ClientT) : void
+    + onDisconnect(client : ClientT) : void
+  }
+
+  class Server {
+    {static} + HEARTBEAT_INTERVAL_MS : long
+    {static} + CLIENT_TIMEOUT_MS : long
+    - instance : Server
+    - server : ServerSocket
+    - handlers : ClientHandlerList
+    - executor : ExecutorService
+    - heartbeat : ScheduledExecutorService
+    - acceptThread : Thread
+    - logic : ServerLogic
+    - nextAvailableId : long
+    + start(serverReady : CountDownLatch) : void
+    + closeServer() : void
+    + factoryReset() : void
+    + onMessage(message : String, sender : ClientHandler) : void
+    + onDisconnect(client : ClientHandler) : void
+  }
+
+  class ServerLogic {
+    - server : Server
+    - handlers : ClientHandlerList
+    - rooms : RoomList
+    - registeredDevices : Set<Long>
+    - automations : AutomationEngine
+    - subscriptions : Subscriptions
+    - clients : ClientDirectory
+    - vault : Vault
+    + receiveMessage(worker : MessageWorker,
+        sender : ClientHandler) : void
+    + onCommand(worker : MessageWorker,
+        sender : ClientHandler) : void
+    + heartbeat(timeout : long) : void
+    + onClientDisconnected(client : ClientHandler) : void
+  }
+
+  class ClientHandler {
+    - socket : Socket
+    - in : BufferedReader
+    - out : PrintWriter
+    - messenger : Messenger<String, ClientHandler>
+    - id : long
+    - lastSeen : long
+    + run() : void
+    + sendToClient(message : String) : void
+    + getId() : long
+    + getLastSeen() : long
+    + close() : void
+  }
+
+  class ClientHandlerList {
+    - instance : ClientHandlerList
+    - handlers : Map<Long, ClientHandler>
+    {static} + getInstance() : ClientHandlerList
+  }
+
+  class Room {
+    - name : String
+    - id : long
+    - handlers : Map<Long, ClientHandler>
+    - logic : RoomLogic
+  }
+
+  class RoomList {
+    - instance : RoomList
+    - rooms : Map<Long, Room>
+    {static} + getInstance() : RoomList
+    + create(name : String) : Room
+    + get(id : long) : Room
+    + getValues() : Collection<Room>
+  }
+
+  class RoomLogic {
+    - room : Room
+    + receiveMessage(worker : MessageWorker,
+        sender : ClientHandler) : void
+  }
+
+  class ClientDirectory {
+    - idsByName : Map<String, Long>
+    - clientsById : Map<Long, Client>
+    {static} + parseHello(value : String) : Client
+    + introduce(client : Client,
+        currentId : long) : long
+  }
+
+  class Subscriptions {
+    - subscribers : Map<Long, Set<Long>>
+    - states : Map<Long, Map<String, String>>
+    + subscribe(subscriberId : long,
+        deviceId : long) : boolean
+    + updateState(deviceId : long,
+        property : String, value : String) : boolean
+  }
+
+  class AutomationEngine {
+    - automations : Map<Long, Automation>
+    - active : Set<Long>
+    - latestReadings : Map<String, Double>
+    - nextId : long
+  }
+}
+
+Server ..|> Messenger
+Server *-- ServerLogic
+Server *-- ClientHandlerList
+Server --> "*" ClientHandler : creates
+ClientHandler .left.|> Runnable
+ClientHandler -up-> Messenger
+
+ServerLogic --> ClientHandlerList
+ServerLogic --> RoomList
+ServerLogic -right-> ClientDirectory
+ServerLogic --> Subscriptions
+ServerLogic --> AutomationEngine
+ClientHandlerList o-- "*" ClientHandler
+RoomList o-- "*" Room
+Room *-left- RoomLogic
+Room o-- "*" ClientHandler
+
+@enduml

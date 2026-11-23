@@ -1,0 +1,145 @@
+@startuml
+title Client-Side Class Diagram
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam dpi 150
+
+package "network" {
+  interface Messenger<MessageT, ClientT> {
+    + onConnect(client : ClientT) : void
+    + onMessage(message : MessageT, sender : ClientT) : void
+    + onDisconnect(client : ClientT) : void
+  }
+
+  class ClientConnectionHolder<ClientT> {
+    - socket : Socket
+    - out : PrintWriter
+    - in : BufferedReader
+    - connected : boolean
+    - listener : Thread
+    - client : ClientT
+    - lastReceived : long
+    + ClientConnectionHolder(client : ClientT)
+    + message(message : String) : void
+    + receive() : void
+    + retryConnection() : void
+  }
+}
+
+package "device" {
+  abstract class Device {
+    - connection : ClientConnectionHolder<Device>
+    - id : long
+    - name : String
+    - connectedBefore : boolean
+    - replaced : boolean
+    # properties : Map<String, Object>
+    + start() : void
+    # onStarted() : void
+    # onReconnected() : void
+    # sendMessage(destination : String,
+        command : String) : void
+    # publishState() : void
+    + onConnect(holder : ClientConnectionHolder) : void
+    + onMessage(message : String,
+        sender : ClientConnectionHolder) : void
+    + onDisconnect(holder : ClientConnectionHolder) : void
+  }
+
+  package "actuator" {
+    abstract class Actuator {
+      - commands : Map<String, CommandSpec>
+      # registerCommand(spec : CommandSpec) : void
+      # executeCommand(name : String,
+          argument : String) : void
+      + announceCommands(destination : String) : void
+    }
+
+    class Light
+    class Fan
+    class Heater
+    class DoorLock
+  }
+
+  package "sensor" {
+    abstract class Sensor {
+      {static} + MEASURE_INTERVAL_MS : long
+      # measure() : void
+      # report(reading : String, value : double) : void
+    }
+
+    class TemperatureSensor
+    class HumiditySensor
+    class Switch
+  }
+
+  package "controller" {
+    class Controller {
+      - role : Role
+      - devices : Map<Long, ControlledDevice>
+      - rooms : Map<Long, Set<Long>>
+      - roomNames : Map<Long, String>
+      - automations : Map<Long, Automation>
+      - pending : PendingRequests
+      + sendCommand(id : long,
+          command : String, argument : String) : void
+      + subscribe(id : long) : CompletableFuture<Void>
+    }
+
+    class ControlledDevice {
+      - id : long
+      - name : String
+      - online : boolean
+      - type : DeviceType
+      - kind : String
+      - commands : Map<String, CommandSpec>
+      - state : Map<String, String>
+      + isOnline() : boolean
+      + getType() : Optional<DeviceType>
+      + getKind() : Optional<String>
+      + getCommands() : Map<String, CommandSpec>
+      + getState() : Map<String, String>
+    }
+  }
+}
+
+package "gui" {
+  class SmartHomeApp
+  class DashboardController
+  class HomeModel {
+    {static} + POLL_INTERVAL : Duration
+    - controller : Controller
+    - listeners : List<Runnable>
+    - poller : Timeline
+    + start() : void
+    + stop() : void
+    + getController() : Controller
+    + getDevices() : List<ControlledDevice>
+    + getRooms() : Map<Long, Set<Long>>
+    + getAutomations() : List<Automation>
+  }
+}
+
+Device .right.|> Messenger
+Device *-- ClientConnectionHolder
+ClientConnectionHolder -up-> Messenger
+Controller -right-|> Device
+Actuator --|> Device
+Sensor --|> Device
+Light --|> Actuator
+Fan --|> Actuator
+Heater --|> Actuator
+DoorLock --|> Actuator
+TemperatureSensor --|> Sensor
+HumiditySensor --|> Sensor
+Switch --|> Sensor
+Controller o-- "*" ControlledDevice
+SmartHomeApp --> DashboardController
+SmartHomeApp --> HomeModel
+DashboardController --> HomeModel
+HomeModel -left-> Controller
+HomeModel o-down- "*" ControlledDevice
+
+@enduml

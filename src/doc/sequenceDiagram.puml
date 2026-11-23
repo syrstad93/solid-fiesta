@@ -1,0 +1,62 @@
+@startuml
+title Smart Home Registration and State Update
+
+actor "User" as User
+participant "SmartHomeApp" as GUI
+participant "Controller" as Controller
+participant "ClientConnectionHolder" as Connection
+participant "Server" as Server
+participant "ClientHandler" as Handler
+participant "ServerLogic" as Logic
+participant "Device" as Device
+
+== Application and controller connection ==
+User -> GUI : launch application
+GUI -> Controller : start()
+Controller -> Connection : new ClientConnectionHolder(this)
+Connection -> Server : open TCP connection
+Server -> Handler : accept socket
+Server -> Handler : create ClientHandler
+Connection -> Server : HELLO
+Server -> Handler : receive message
+Handler -> Logic : receiveMessage()
+Logic -> Handler : WELCOME:<id>
+Handler -> Connection : send WELCOME
+Connection -> Controller : onMessage()
+
+== Device connection ==
+Device -> Connection : start()
+Connection -> Server : open TCP connection
+Server -> Handler : accept socket
+Server -> Handler : create ClientHandler
+Connection -> Server : HELLO
+Server -> Handler : receive message
+Handler -> Logic : receiveMessage()
+Logic -> Handler : WELCOME:<id>
+Handler -> Connection : send WELCOME
+Connection -> Device : onMessage()
+Device -> Device : setId(id)
+Device -> Connection : publish state
+Connection -> Server : STATE:<property>,<value>
+
+== Controller command ==
+User -> GUI : change device state
+GUI -> Controller : command device
+Controller -> Connection : send command
+Connection -> Server : TCP command message
+Server -> Handler : receive message
+Handler -> Logic : receiveMessage()
+Logic -> Handler : send command to device
+Handler -> Connection : deliver command
+Connection -> Device : onMessage()
+Device -> Device : handle command
+Device -> Connection : publish updated state
+Connection -> Server : STATE:<property>,<value>
+
+Server -> Handler : distribute update
+Handler -> Connection : send state update
+Connection -> Controller : onMessage()
+Controller -> GUI : update device state
+GUI -> User : display updated state
+
+@enduml
