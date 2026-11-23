@@ -3,7 +3,7 @@
 
 ## Group 1 members
 - [Kristoffer Syrstad](https://github.com/syrstad93)
-- [Iver Saunes Ronald](https://github.com/Iver909)
+- [Iver Saunes Roald](https://github.com/Iver909)
 - [Matias Huse Heggdal](https://github.com/matiashh95)
 
 
